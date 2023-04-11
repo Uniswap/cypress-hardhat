@@ -129,20 +129,18 @@ export class HardhatUtils {
             await token.transfer(address, balance)
             return
           } catch (e) {
-            if (e instanceof Error) {
-              // If failure is due to lack of funds, fund and retry this whale.
-              const match = e.message.match(
-                /sender doesn't have enough funds to send tx. The max upfront cost is: (\d*)/
-              )
-              if (match) {
-                const funds = CurrencyAmount.fromRawAmount(ETH, match[1])
-                this.fund(whale, funds)
-                try {
-                  await token.transfer(address, balance)
-                  return
-                } catch (e) {
-                  // Silently ignore.
-                }
+            // If failure is due to lack of funds, fund and retry this whale.
+            const match = (e as Error).message.match(
+              /sender doesn't have enough funds to send tx. The max upfront cost is: (\d*)/
+            )
+            if (match) {
+              const funds = CurrencyAmount.fromRawAmount(ETH, match[1])
+              this.fund(whale, funds)
+              try {
+                await token.transfer(address, balance)
+                return
+              } catch (e) {
+                // Silently ignore.
               }
             }
           } finally {
