@@ -1,13 +1,13 @@
 import { ExternallyOwnedAccount } from '@ethersproject/abstract-signer'
 import { HDNode } from '@ethersproject/hdnode'
-import { ethers } from 'hardhat'
+import { computeAddress } from '@ethersproject/transactions'
 import { HardhatNetworkAccountsConfig } from 'hardhat/types'
 
 /** Derives ExternallyOwnedAccounts (ie private keys and addresses) from a hardhat accounts configuration. */
 export function toExternallyOwnedAccounts(accounts: HardhatNetworkAccountsConfig): ExternallyOwnedAccount[] {
   if (Array.isArray(accounts)) {
     return accounts.map(({ privateKey }) => ({
-      address: ethers.utils.computeAddress(privateKey),
+      address: computeAddress(privateKey),
       privateKey: privateKey.toLowerCase(),
     }))
   } else {

@@ -9,14 +9,10 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2016",
-    "types": [
-      "jest",
-      "@nomiclabs/hardhat-ethers"
-    ]
+    "types": ["cypress", "jest"]
   },
   "files": [
-    "src/setup.ts",
-    "src/node.ts",
-    "src/jsdom.ts"
+    "src/browser.ts",
+    "src/plugin.ts"
   ]
 }

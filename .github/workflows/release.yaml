@@ -13,16 +13,11 @@ jobs:
         with:
           node-version: 14
           registry-url: https://registry.npmjs.org
-          cache: 'yarn'
+          cache: "yarn"
 
       - run: yarn install --frozen-lockfile
 
       - run: yarn test
-        if: success()
-        env:
-          JSON_RPC_PROVIDER: ${{ secrets.JSON_RPC_PROVIDER }}
-      
-      - run: yarn test:e2e
         if: success()
         env:
           JSON_RPC_PROVIDER: ${{ secrets.JSON_RPC_PROVIDER }}
