@@ -10,13 +10,15 @@
     "compile": "typechain --target ethers-v5 --out-dir src/types 'abis/**/*.json'",
     "build": "tsc",
     "lint": "eslint . --ignore-path .gitignore",
-    "test": "jest src/ --coverage",
+    "test": "jest src/ --runInBand --coverage",
     "prepublishOnly": "yarn build",
     "release": "semantic-release"
   },
   "jest": {
     "collectCoverageFrom": [
-      "src/**"
+      "src/**",
+      "!src/types/**",
+      "!src/plugin.ts"
     ],
     "coverageThreshold": {
       "global": {
