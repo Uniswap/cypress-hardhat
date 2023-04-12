@@ -9,10 +9,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2016",
-    "types": ["cypress", "jest"]
+    "types": ["jest", "cypress"]
   },
-  "files": [
-    "src/browser.ts",
-    "src/plugin.ts"
-  ]
+  "include": ["src"],
 }
