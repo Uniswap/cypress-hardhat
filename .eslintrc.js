@@ -7,7 +7,7 @@ module.exports = {
   ignorePatterns: ['*.js'],
   overrides: [
     {
-      files: ['src/plugin.ts'],
+      files: ['src/index.ts'],
       rules: {
         'import/no-unused-modules': 'off',
       }
