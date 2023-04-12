@@ -9,6 +9,9 @@ export function setupHardhatEvents(on: Cypress.PluginEvents) {
   on('before:spec', () => env.reset())
   on('after:run', () => env.close())
   on('task', {
-    ['hardhat:getWallets']: () => env.accounts,
+    hardhat: () => ({
+      url: env.url,
+      accounts: env.accounts,
+    }),
   })
 }
