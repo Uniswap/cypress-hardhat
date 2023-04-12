@@ -37,7 +37,7 @@ class ImpersonatedSigner extends VoidSigner {
 const CHAIN_ID = 1
 const ETH = Ether.onChain(CHAIN_ID)
 
-class HardhatUtils {
+export class HardhatUtils {
   /** The JSON-RPC url to connect to the hardhat network. */
   readonly url: string
   /** The accounts configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
@@ -163,4 +163,3 @@ class HardhatUtils {
     return this.provider.send(method, params)
   }
 }
-export default HardhatUtils

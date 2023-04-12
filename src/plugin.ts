@@ -1,6 +1,6 @@
 import setup from './plugin/setup'
 
-function setupNodeEvents(on: Cypress.PluginEvents) {
+export function setupHardhatEvents(on: Cypress.PluginEvents) {
   let env: Awaited<ReturnType<typeof setup>>
 
   on('before:run', async () => {
@@ -12,4 +12,3 @@ function setupNodeEvents(on: Cypress.PluginEvents) {
     ['hardhat:getWallets']: () => env.accounts,
   })
 }
-export default setupNodeEvents

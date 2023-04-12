@@ -1,2 +1,2 @@
-export { default as setupHardhatEvents } from './plugin'
-export { default as HardhatUtils } from './utils'
+export { setupHardhatEvents } from './plugin'
+export { HardhatUtils } from './utils'

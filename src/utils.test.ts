@@ -6,7 +6,7 @@
 import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
 
 import setup from './plugin/setup'
-import HardhatUtils from './utils'
+import { HardhatUtils } from './utils'
 
 const CHAIN_ID = 1
 const ETH = Ether.onChain(CHAIN_ID)
