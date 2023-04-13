@@ -1,5 +1,6 @@
 import { ExternallyOwnedAccount, VoidSigner } from '@ethersproject/abstract-signer'
 import { hexValue } from '@ethersproject/bytes'
+import { resolveProperties } from '@ethersproject/properties'
 import {
   JsonRpcProvider,
   StaticJsonRpcProvider,
@@ -10,7 +11,6 @@ import { parseUnits } from '@ethersproject/units'
 import { Wallet } from '@ethersproject/wallet'
 import { Currency, CurrencyAmount, Ether } from '@uniswap/sdk-core'
 import assert from 'assert'
-import { resolveProperties } from 'ethers/lib/utils'
 
 import { Erc20__factory } from './types'
 import { WHALES } from './whales'
@@ -159,7 +159,7 @@ export class HardhatUtils {
     )
   }
 
-  send(method: string, params: any[]) {
+  private send(method: string, params: any[]) {
     return this.provider.send(method, params)
   }
 }
