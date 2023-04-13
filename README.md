@@ -38,7 +38,9 @@ export default defineConfig({
 })
 ```
 
-In addition, cypress-hardhat includes some utilities for seeding your environment. These should be imported into your browser testing environment, *not* in your configuration:
+As configured, `cypress-hardhat` will reset the fork between specs when run using `cypress run` (this does not include `cypress open` due to a limitation of cypress). This can be extended to include runs using `cypress open` by enabling the [`experimentalInteractiveRunEvents` flag](https://docs.cypress.io/guides/references/experiments).
+
+In addition, `cypress-hardhat` includes some utilities for seeding your environment. These should be imported into your browser testing environment, *not* in your configuration:
 
 ```
 import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
