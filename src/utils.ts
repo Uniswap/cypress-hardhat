@@ -13,6 +13,7 @@ import { Currency, CurrencyAmount, Ether } from '@uniswap/sdk-core'
 import assert from 'assert'
 
 import { Erc20__factory } from './types'
+import { Network } from './types/Network'
 import { WHALES } from './whales'
 
 type AddressLike = string | { address: string }
@@ -45,7 +46,7 @@ export class HardhatUtils {
   /** The signing providers configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
   readonly providers: JsonRpcProvider[]
 
-  constructor({ url, accounts }: { url: string; accounts: ExternallyOwnedAccount[] }) {
+  constructor({ url, accounts }: Network) {
     this.url = url
     this.accounts = accounts
     this.providers = accounts.map((account) => {

@@ -38,6 +38,7 @@ describe('setup', () => {
       env = await setup()
       expect(env).toMatchObject({
         url: 'http://127.0.0.1:8545',
+        chainId: 1,
         accounts: [
           {
             address: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
