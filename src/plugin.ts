@@ -1,4 +1,5 @@
 import setup from './plugin/setup'
+import { Network } from './types/Network'
 
 export async function setupHardhatEvents(on: Cypress.PluginEvents, config: Cypress.PluginConfigOptions) {
   // Allows plugin events to run in interactive mode.
@@ -8,8 +9,9 @@ export async function setupHardhatEvents(on: Cypress.PluginEvents, config: Cypre
   const env = await setup()
 
   on('task', {
-    hardhat: () => ({
+    hardhat: (): Network => ({
       url: env.url,
+      chainId: env.chainId,
       accounts: env.accounts,
     }),
   })

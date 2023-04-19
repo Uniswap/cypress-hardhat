@@ -1,21 +1,19 @@
-import { ExternallyOwnedAccount } from '@ethersproject/abstract-signer'
 import hre from 'hardhat'
 import { TASK_NODE, TASK_NODE_GET_PROVIDER, TASK_NODE_SERVER_READY } from 'hardhat/builtin-tasks/task-names'
 import { HardhatNetworkAccountsConfig, JsonRpcServer } from 'hardhat/types'
 
+import { Network } from '../types/Network'
 import { toExternallyOwnedAccounts } from './accounts'
 
 /** Sets up the hardhat environment for use with cypress. */
-export default async function setup(): Promise<{
-  /** The hardhat environment's address. */
-  url: string
-  /** The hardhat test accounts. */
-  accounts: ExternallyOwnedAccount[]
-  /** Resets the hardhat environment. Call before a spec to reset the environment. */
-  reset: () => Promise<void>
-  /** Tears down the hardhat environment. Call after a run to clean up the environment. */
-  close: () => Promise<void>
-}> {
+export default async function setup(): Promise<
+  Network & {
+    /** Resets the hardhat environment. Call before a spec to reset the environment. */
+    reset: () => Promise<void>
+    /** Tears down the hardhat environment. Call after a run to clean up the environment. */
+    close: () => Promise<void>
+  }
+> {
   const forking = hre.config.networks.hardhat.forking
   if (!forking) {
     throw new Error(
@@ -49,6 +47,7 @@ export default async function setup(): Promise<{
   const { url, server } = await serverReady
   return {
     url,
+    chainId: hre.config.networks.hardhat.chainId,
     accounts,
     reset: () =>
       hre.network.provider.send('hardhat_reset', [
