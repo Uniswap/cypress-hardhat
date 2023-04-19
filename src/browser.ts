@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unused-modules */
 import { ExternallyOwnedAccount, VoidSigner } from '@ethersproject/abstract-signer'
 import { hexValue } from '@ethersproject/bytes'
 import { resolveProperties } from '@ethersproject/properties'
@@ -15,6 +16,8 @@ import assert from 'assert'
 import { Erc20__factory } from './types'
 import { Network } from './types/Network'
 import { WHALES } from './whales'
+
+export { Network } from './types/Network'
 
 type AddressLike = string | { address: string }
 type OneOrMany<T> = T | T[]

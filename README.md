@@ -26,7 +26,7 @@ NOTE: You should set the [`accounts` field](https://hardhat.org/hardhat-network/
 Then, install the plugin in your cypress configuration (see the [cypress documentation](https://docs.cypress.io/guides/tooling/plugins-guide#Using-a-plugin) for details):
 
 ```
-import { setupHardhatEvents } from 'cypress-hardhat/plugin'
+import { setupHardhatEvents } from 'cypress-hardhat'
 
 export default defineConfig({
   e2e: {
@@ -42,14 +42,28 @@ In addition, `cypress-hardhat` includes some utilities for seeding your environm
 
 ```
 import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
-import { fund, accounts } from 'cypress-hardhat/utils'
+import { HardhatUtils, Network } from 'cypress-hardhat/lib/browser'
 
-beforeAll('test', () => {
-  const ETH = Ether.onChain(CHAIN_ID)
-  const amount = CurrencyAmount.fromRawAmount(ETH, 6000000).multiply(10 ** ETH.decimals)
-  await fund(accounts[0], amount)
+declare global {
+  namespace Cyrpess {
+    interface Chainable<Subject> {
+      task(event: 'hardhat'): Chainable<Network>
+    }
+  }
+}
+
+const ETH = Ether.onChain(CHAIN_ID)
+const amount = CurrencyAmount.fromRawAmount(ETH, 6000000).multiply(10 ** ETH.decimals)
+
+it('communicates with hardhat', () => {
+  cy.task('hardhat').then((network) => {
+    const hardhat = new HardhatUtils(network)
+    hardhat.fund(hardhat.account, amount)
+  })
 })
 ```
+
+For example, this can be used to inject a mock window.ethereum object that will communicate with hardhat.
 
 ---
 
