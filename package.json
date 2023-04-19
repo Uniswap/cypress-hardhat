@@ -5,8 +5,8 @@
   "repository": "https://github.com/Uniswap/cypress-hardhat",
   "author": "Zach Pomerantz <zzmp@uniswap.org>",
   "license": "GPL-3.0-or-later",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "prepare": "yarn compile",
     "compile": "typechain --target ethers-v5 --out-dir src/types 'abis/**/*.json'",
@@ -20,7 +20,7 @@
     "collectCoverageFrom": [
       "src/**",
       "!src/types/**",
-      "!src/plugin.ts"
+      "!src/index.ts"
     ],
     "coverageThreshold": {
       "global": {
