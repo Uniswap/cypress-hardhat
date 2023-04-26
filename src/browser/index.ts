@@ -1,5 +1,3 @@
-/* eslint-disable import/no-unused-modules */
-
 import { Network } from '../types/Network'
 import { Eip1193 } from './eip1193'
 import { Utils } from './utils'
