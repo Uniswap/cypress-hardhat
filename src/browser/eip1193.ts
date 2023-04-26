@@ -1,5 +1,6 @@
 import { Eip1193Bridge } from '@ethersproject/experimental/lib/eip1193-bridge'
 import { JsonRpcProvider } from '@ethersproject/providers'
+
 import { Utils } from './utils'
 
 export class Eip1193 extends Eip1193Bridge {

@@ -20,7 +20,6 @@
     "collectCoverageFrom": [
       "src/**",
       "!src/types/**",
-      "!src/browser/index.ts",
       "!src/plugin/index.ts"
     ],
     "coverageThreshold": {
