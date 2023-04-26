@@ -10,10 +10,13 @@ import {
 } from '@ethersproject/providers'
 import { parseUnits } from '@ethersproject/units'
 import { Wallet } from '@ethersproject/wallet'
-import { Currency, CurrencyAmount, Ether } from '@uniswap/sdk-core'
+import { PERMIT2_ADDRESS } from '@uniswap/permit2-sdk'
+import { Currency, CurrencyAmount, Ether, SupportedChainId } from '@uniswap/sdk-core'
+import { UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk'
 import assert from 'assert'
+import { BigNumber } from 'ethers/lib/ethers'
 
-import { Erc20__factory } from '../types'
+import { AllowanceTransfer__factory, Erc20__factory, Permit2__factory } from '../types'
 import { Network } from '../types/Network'
 import { WHALES } from './whales'
 
@@ -42,6 +45,7 @@ const ETH = Ether.onChain(CHAIN_ID)
 export class Utils {
   /** Signing providers configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
   readonly providers: JsonRpcProvider[]
+  approval: ApprovalUtils
 
   constructor(public network: Network) {
     this.providers = this.network.accounts.map((account) => {
@@ -60,6 +64,7 @@ export class Utils {
         },
       })
     })
+    this.approval = new ApprovalUtils(this.provider)
   }
 
   reset() {
@@ -167,5 +172,92 @@ export class Utils {
 
   private send(method: string, params: any[]) {
     return this.provider.send(method, params)
+  }
+}
+
+class ApprovalUtils {
+  readonly provider: JsonRpcProvider
+
+  constructor(provider: JsonRpcProvider) {
+    this.provider = provider
+  }
+
+  /** Returns the amount an address is approved to spend for the input token */
+  async getErc20Allowance(owner: AddressLike, tokenAddress: AddressLike, spender: AddressLike): Promise<BigNumber> {
+    if (typeof owner !== 'string') return this.getErc20Allowance(owner.address, tokenAddress, spender)
+    if (typeof tokenAddress !== 'string') return this.getErc20Allowance(owner, tokenAddress.address, spender)
+    if (typeof spender !== 'string') return this.getErc20Allowance(owner, tokenAddress, spender.address)
+
+    const token = Erc20__factory.connect(tokenAddress, this.provider)
+    return await token.allowance(owner, spender)
+  }
+
+  /** Sets the amount an address is approved to spend for the input token */
+  async setErc20Approval(
+    owner: AddressLike,
+    tokenAddress: AddressLike,
+    spender: AddressLike,
+    amount: number
+  ): Promise<void> {
+    if (typeof owner !== 'string') return this.setErc20Approval(owner.address, tokenAddress, spender, amount)
+    if (typeof tokenAddress !== 'string') return this.setErc20Approval(owner, tokenAddress.address, spender, amount)
+    if (typeof spender !== 'string') return this.setErc20Approval(owner, tokenAddress, spender.address, amount)
+
+    const token = Erc20__factory.connect(tokenAddress, new ImpersonatedSigner(owner, this.provider))
+    await token.approve(spender, amount)
+    return
+  }
+
+  /** Revokes an address's approval to spend the input token */
+  async revokeErc20Approval(owner: AddressLike, tokenAddress: AddressLike, spender: AddressLike): Promise<void> {
+    return this.setErc20Approval(owner, tokenAddress, spender, 0)
+  }
+
+  /** Returns the amount Permit2 is approved to spend for the input token */
+  async getPermit2Allowance(owner: AddressLike, tokenAddress: AddressLike): Promise<BigNumber> {
+    return await this.getErc20Allowance(owner, tokenAddress, PERMIT2_ADDRESS)
+  }
+
+  /** Sets the amount Permit2 is approved to spend for the input token */
+  async setPermit2Approval(owner: AddressLike, tokenAddress: AddressLike, amount: number) {
+    return this.setErc20Approval(owner, tokenAddress, PERMIT2_ADDRESS, amount)
+  }
+
+  /** Revokes Permit2's approval to spend the input token */
+  async revokePermit2Approval(owner: AddressLike, tokenAddress: AddressLike) {
+    return this.setPermit2Approval(owner, tokenAddress, 0)
+  }
+
+  /** Returns the amount and expiration of the Universal Router's permit2 approval for the input token */
+  async getUniversalRouterAllowance(
+    owner: AddressLike,
+    tokenAddress: AddressLike
+  ): Promise<{ amount: BigNumber; expiration: number }> {
+    if (typeof owner !== 'string') return this.getUniversalRouterAllowance(owner.address, tokenAddress)
+    if (typeof tokenAddress !== 'string') return this.getUniversalRouterAllowance(owner, tokenAddress.address)
+
+    const permit2 = Permit2__factory.connect(PERMIT2_ADDRESS, this.provider)
+    return permit2.allowance(owner, tokenAddress, UNIVERSAL_ROUTER_ADDRESS(SupportedChainId.MAINNET))
+  }
+
+  /** Sets the amount an address is allowed to spend via permit2 for the input token */
+  async permitUniversalRouter(
+    owner: AddressLike,
+    tokenAddress: AddressLike,
+    amount: number,
+    expiration: number
+  ): Promise<void> {
+    if (typeof owner !== 'string') return this.permitUniversalRouter(owner.address, tokenAddress, amount, expiration)
+    if (typeof tokenAddress !== 'string')
+      return this.permitUniversalRouter(owner, tokenAddress.address, amount, expiration)
+
+    const permit2 = AllowanceTransfer__factory.connect(PERMIT2_ADDRESS, new ImpersonatedSigner(owner, this.provider))
+    await permit2.approve(tokenAddress, UNIVERSAL_ROUTER_ADDRESS(SupportedChainId.MAINNET), amount, expiration)
+    return
+  }
+
+  /** Revokes the Universal Router's permit2 allowance to spend the input token */
+  async revokeUniversalRouter(owner: AddressLike, tokenAddress: AddressLike): Promise<void> {
+    return this.permitUniversalRouter(owner, tokenAddress, 0, 0)
   }
 }
