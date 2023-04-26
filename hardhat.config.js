@@ -9,6 +9,10 @@ const mainnetFork = {
 module.exports = {
   networks: {
     hardhat: {
+      mining: {
+        auto: false,
+        interval: 12000, // average mainnet block time
+      },
       chainId: 1,
       forking: mainnetFork,
       accounts: {
