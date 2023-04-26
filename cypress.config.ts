@@ -1,4 +1,6 @@
-import { defineConfig } from "cypress";
+/* eslint-disable import/no-unused-modules */
+import { defineConfig } from 'cypress'
+
 import { setupHardhatEvents } from './src/plugin'
 
 export default defineConfig({
@@ -7,4 +9,4 @@ export default defineConfig({
       await setupHardhatEvents(on, config)
     },
   },
-});
+})

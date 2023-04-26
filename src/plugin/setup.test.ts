@@ -14,7 +14,6 @@ beforeEach(async () => {
   setup = (await import('./setup')).default
 })
 
-beforeEach(jest.restoreAllMocks)
 beforeEach(jest.resetModules)
 
 describe('setup', () => {

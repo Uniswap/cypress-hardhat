@@ -1,4 +1,3 @@
-/* eslint-disable import/no-unused-modules */
 import { Signer, VoidSigner } from '@ethersproject/abstract-signer'
 import { hexValue } from '@ethersproject/bytes'
 import { resolveProperties } from '@ethersproject/properties'
