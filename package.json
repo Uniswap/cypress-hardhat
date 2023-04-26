@@ -20,6 +20,7 @@
     "collectCoverageFrom": [
       "src/**",
       "!src/types/**",
+      "!src/browser/eip1193.ts",
       "!src/browser/index.ts",
       "!src/plugin/index.ts"
     ],

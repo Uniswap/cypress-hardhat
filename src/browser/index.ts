@@ -5,8 +5,7 @@ import { Utils } from './utils'
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    interface Chainable<Subject> {
+    interface Chainable {
       hardhat(): Chainable<Utils>
       provider(): Chainable<Eip1193>
       task(event: 'hardhat'): Chainable<Network>
@@ -15,20 +14,19 @@ declare global {
 }
 
 let hardhat: Utils
-let provider: Eip1193
-
-cy.hardhat = () => {
+Cypress.Commands.add('hardhat', () => {
   if (hardhat) return cy.wrap(hardhat)
 
   return cy.task('hardhat').then((env) => {
     return (hardhat = new Utils(env))
   })
-}
+})
 
-cy.provider = () => {
+let provider: Eip1193
+Cypress.Commands.add('provider', () => {
   if (provider) return cy.wrap(provider)
 
   return cy.hardhat().then((hardhat) => {
     return (provider = new Eip1193(hardhat))
   })
-}
+})
