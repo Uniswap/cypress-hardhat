@@ -11,7 +11,7 @@ import {
 import { parseUnits } from '@ethersproject/units'
 import { Wallet } from '@ethersproject/wallet'
 import { PERMIT2_ADDRESS } from '@uniswap/permit2-sdk'
-import { Currency, CurrencyAmount, Ether, SupportedChainId } from '@uniswap/sdk-core'
+import { Currency, CurrencyAmount, Ether } from '@uniswap/sdk-core'
 import { UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk'
 import assert from 'assert'
 import { BigNumber } from 'ethers/lib/ethers'
@@ -237,7 +237,7 @@ class ApprovalUtils {
     if (typeof tokenAddress !== 'string') return this.getUniversalRouterAllowance(owner, tokenAddress.address)
 
     const permit2 = Permit2__factory.connect(PERMIT2_ADDRESS, this.provider)
-    return permit2.allowance(owner, tokenAddress, UNIVERSAL_ROUTER_ADDRESS(SupportedChainId.MAINNET))
+    return permit2.allowance(owner, tokenAddress, UNIVERSAL_ROUTER_ADDRESS(this.provider.network.chainId))
   }
 
   /** Sets the amount the Universal Router is permitted to spend for the input token */
@@ -252,7 +252,7 @@ class ApprovalUtils {
       return this.permitUniversalRouter(owner, tokenAddress.address, amount, expiration)
 
     const permit2 = AllowanceTransfer__factory.connect(PERMIT2_ADDRESS, new ImpersonatedSigner(owner, this.provider))
-    await permit2.approve(tokenAddress, UNIVERSAL_ROUTER_ADDRESS(SupportedChainId.MAINNET), amount, expiration)
+    await permit2.approve(tokenAddress, UNIVERSAL_ROUTER_ADDRESS(this.provider.network.chainId), amount, expiration)
     return
   }
 
