@@ -187,4 +187,66 @@ describe('Hardhat', () => {
       expect(balance2.toExact()).toBe('20000')
     })
   })
+
+  describe('approval', () => {
+    describe('setErc20Approval', () => {
+      const spender = { address: '0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8' }
+      it('approves USDT', async () => {
+        const originalAllowance = await utils.approval.getErc20Allowance(utils.wallet, USDT, spender)
+        expect(originalAllowance.toNumber()).toBe(0)
+
+        await utils.approval.setErc20Approval(utils.wallet, USDT, spender, 5)
+
+        const updatedAllowance = await utils.approval.getErc20Allowance(utils.wallet, USDT, spender)
+        expect(updatedAllowance.toNumber()).toBe(5)
+      })
+      it('revokes USDT', async () => {
+        await utils.approval.setErc20Approval(utils.wallet, USDT, spender, 5)
+        await utils.approval.revokeErc20Approval(utils.wallet, USDT, spender)
+
+        const allowance = await utils.approval.getErc20Allowance(utils.wallet, USDT, spender)
+        expect(allowance.toNumber()).toBe(0)
+      })
+    })
+    describe('setPermit2Approval', () => {
+      it('approves USDT for Permit2', async () => {
+        const originalAllowance = await utils.approval.getPermit2Allowance(utils.wallet, USDT)
+        expect(originalAllowance.toNumber()).toBe(0)
+
+        await utils.approval.setPermit2Approval(utils.wallet, USDT, 5)
+
+        const updatedAllowance = await utils.approval.getPermit2Allowance(utils.wallet, USDT)
+        expect(updatedAllowance.toNumber()).toBe(5)
+      })
+      it('revokes USDT for Permit2', async () => {
+        await utils.approval.setPermit2Approval(utils.wallet, USDT, 5)
+        await utils.approval.revokePermit2Approval(utils.wallet, USDT)
+
+        const allowance = await utils.approval.getPermit2Allowance(utils.wallet, USDT)
+        expect(allowance.toNumber()).toBe(0)
+      })
+    })
+    describe('permitUniversalRouter', () => {
+      it('permits Universal Router for USDT', async () => {
+        const originalPermit = await utils.approval.getUniversalRouterAllowance(utils.wallet, USDT)
+        expect(originalPermit.amount.toNumber()).toBe(0)
+        expect(originalPermit.expiration).toBe(0)
+
+        await utils.approval.permitUniversalRouter(utils.wallet, USDT, 5, 1000)
+
+        const updatedAllowance = await utils.approval.getUniversalRouterAllowance(utils.wallet, USDT)
+        expect(updatedAllowance.amount.toNumber()).toBe(5)
+        expect(updatedAllowance.expiration).toBe(1000)
+      })
+      it("revokes Universal Router's permit for USDT", async () => {
+        await utils.approval.permitUniversalRouter(utils.wallet, USDT, 5, 1000)
+        await utils.approval.revokeUniversalRouter(utils.wallet, USDT)
+
+        const allowance = await utils.approval.getUniversalRouterAllowance(utils.wallet, USDT)
+
+        expect(allowance.amount.toNumber()).toBe(0)
+        expect(allowance.expiration).toBeLessThan(Date.now() / 1000)
+      })
+    })
+  })
 })
