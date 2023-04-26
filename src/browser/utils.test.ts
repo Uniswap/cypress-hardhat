@@ -21,10 +21,28 @@ beforeAll(async () => {
   utils = new Utils(env)
 })
 beforeEach(() => env.reset())
-afterEach(jest.restoreAllMocks)
 afterAll(() => env.close())
 
+const globalWithCy = global as typeof global & { cy: Cypress.cy }
+beforeAll(() => {
+  globalWithCy.cy = { task: jest.fn() as Cypress.cy['task'] } as Cypress.cy
+})
+
+beforeEach(jest.restoreAllMocks)
+
 describe('Hardhat', () => {
+  describe('reset', () => {
+    it('invokes hardhat:reset', () => {
+      return new Promise<void>((done) => {
+        jest.mocked(globalWithCy.cy.task).mockResolvedValueOnce(undefined)
+        utils.reset().then(() => {
+          expect(cy.task).toHaveBeenCalledTimes(1)
+          done()
+        })
+      })
+    })
+  })
+
   describe('account', () => {
     it('returns the first account', async () => {
       expect(utils.accounts[0]).toBe(utils.account)
