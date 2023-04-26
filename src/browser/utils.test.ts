@@ -31,7 +31,7 @@ beforeAll(() => {
 
 beforeEach(jest.restoreAllMocks)
 
-describe('Hardhat', () => {
+describe('Utils', () => {
   describe('reset', () => {
     it('invokes hardhat:reset', () => {
       const chainable = {} as Cypress.Chainable
