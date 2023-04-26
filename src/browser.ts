@@ -70,6 +70,10 @@ export class HardhatUtils {
     })
   }
 
+  reset() {
+    return cy.task('hardhat:reset')
+  }
+
   /** The first account configured via hardhat - @see {@link accounts}. */
   get account() {
     return this.accounts[0]

@@ -15,6 +15,7 @@ export async function setupHardhatEvents(on: Cypress.PluginEvents, config: Cypre
       chainId: env.chainId,
       accounts: env.accounts,
     }),
+    ['hardhat:reset']: () => env.reset(),
   })
   on('before:spec', () => env.reset())
   on('after:run', () => env.close())
