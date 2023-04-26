@@ -33,13 +33,10 @@ beforeEach(jest.restoreAllMocks)
 describe('Hardhat', () => {
   describe('reset', () => {
     it('invokes hardhat:reset', () => {
-      return new Promise<void>((done) => {
-        jest.mocked(globalWithCy.cy.task).mockResolvedValueOnce(undefined)
-        utils.reset().then(() => {
-          expect(cy.task).toHaveBeenCalledTimes(1)
-          done()
-        })
-      })
+      const chainable = {} as Cypress.Chainable
+      jest.mocked(globalWithCy.cy.task).mockReturnValueOnce(chainable)
+      expect(utils.reset()).toBe(chainable)
+      expect(cy.task).toHaveBeenCalledWith('hardhat:reset')
     })
   })
 
