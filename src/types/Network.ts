@@ -5,6 +5,6 @@ export interface Network {
   url: string
   /** The chainId of the network. */
   chainId: number
-  /** The test accounts. */
+  /** Accounts configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
   accounts: ExternallyOwnedAccount[]
 }

@@ -1,5 +1,5 @@
 /* eslint-disable import/no-unused-modules */
-import { ExternallyOwnedAccount, VoidSigner } from '@ethersproject/abstract-signer'
+import { Signer, VoidSigner } from '@ethersproject/abstract-signer'
 import { hexValue } from '@ethersproject/bytes'
 import { resolveProperties } from '@ethersproject/properties'
 import {
@@ -40,18 +40,12 @@ const CHAIN_ID = 1
 const ETH = Ether.onChain(CHAIN_ID)
 
 export class Utils {
-  /** The JSON-RPC url to connect to the hardhat network. */
-  readonly url: string
-  /** The accounts configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
-  readonly accounts: ExternallyOwnedAccount[]
-  /** The signing providers configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
+  /** Signing providers configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
   readonly providers: JsonRpcProvider[]
 
-  constructor({ url, accounts }: Network) {
-    this.url = url
-    this.accounts = accounts
-    this.providers = accounts.map((account) => {
-      const provider = new StaticJsonRpcProvider(url, { chainId: 1, name: 'mainnet' })
+  constructor(public network: Network) {
+    this.providers = this.network.accounts.map((account) => {
+      const provider = new StaticJsonRpcProvider(this.network.url, { chainId: 1, name: 'mainnet' })
       const wallet = new Wallet(account, provider)
       return new Proxy(provider, {
         get(target, prop) {
@@ -72,13 +66,19 @@ export class Utils {
     return cy.task('hardhat:reset')
   }
 
-  /** The first account configured via hardhat - @see {@link accounts}. */
-  get account() {
-    return this.accounts[0]
-  }
-  /** The first signing provider configured via hardhat - @see {@link providers}. */
+  /** The primary signing provider configured via hardhat - @see {@link providers}. */
   get provider() {
     return this.providers[0]
+  }
+
+  /** Wallets configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
+  get wallets() {
+    return this.providers.map((provider) => provider.getSigner() as Signer as Wallet)
+  }
+
+  /** The primary wallet configured via hardhat - @see {@link wallets}. */
+  get wallet() {
+    return this.wallets[0]
   }
 
   /** Gets the balance of ETH ERC-20's held by the address. */
