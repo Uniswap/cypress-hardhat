@@ -1,6 +1,6 @@
 /* eslint-disable import/no-unused-modules */
-import setup from './plugin/setup'
-import { Network } from './types/Network'
+import { Network } from '../types/Network'
+import setup from './setup'
 
 export async function setupHardhatEvents(on: Cypress.PluginEvents, config: Cypress.PluginConfigOptions) {
   // Allows plugin events to run in interactive mode.

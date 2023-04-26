@@ -3,10 +3,11 @@
  * This is expected, and necessary in order collect coverage.
  */
 
+import { Wallet } from '@ethersproject/wallet'
 import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
 
-import { HardhatUtils } from './browser'
-import setup from './plugin/setup'
+import setup from '../plugin/setup'
+import { Utils } from './utils'
 
 const CHAIN_ID = 1
 const ETH = Ether.onChain(CHAIN_ID)
@@ -15,10 +16,10 @@ const USDT = new Token(CHAIN_ID, '0xdAC17F958D2ee523a2206206994597C13D831ec7', 6
 const USDT_TREASURY = '0x5754284f345afc66a98fbb0a0afe71e0f007b949'
 
 let env: Awaited<ReturnType<typeof setup>>
-let utils: HardhatUtils
+let utils: Utils
 beforeAll(async () => {
   env = await setup()
-  utils = new HardhatUtils(env)
+  utils = new Utils(env)
 })
 beforeEach(() => env.reset())
 afterAll(() => env.close())
@@ -33,19 +34,22 @@ beforeEach(jest.restoreAllMocks)
 describe('Hardhat', () => {
   describe('reset', () => {
     it('invokes hardhat:reset', () => {
-      return new Promise<void>((done) => {
-        jest.mocked(globalWithCy.cy.task).mockResolvedValueOnce(undefined)
-        utils.reset().then(() => {
-          expect(cy.task).toHaveBeenCalledTimes(1)
-          done()
-        })
-      })
+      const chainable = {} as Cypress.Chainable
+      jest.mocked(globalWithCy.cy.task).mockReturnValueOnce(chainable)
+      expect(utils.reset()).toBe(chainable)
+      expect(cy.task).toHaveBeenCalledWith('hardhat:reset')
     })
   })
 
-  describe('account', () => {
-    it('returns the first account', async () => {
-      expect(utils.accounts[0]).toBe(utils.account)
+  describe('network', () => {
+    it('returns the network', () => {
+      expect(utils.network).toMatchObject({
+        accounts: expect.arrayContaining([
+          expect.objectContaining({ address: expect.any(String), privateKey: expect.any(String) }),
+        ]),
+        chainId: 1,
+        url: 'http://127.0.0.1:8545',
+      })
     })
   })
 
@@ -53,36 +57,52 @@ describe('Hardhat', () => {
     it('lists accounts', async () => {
       const accounts = await Promise.all(utils.providers.map((provider) => provider.listAccounts()))
       const addresses = accounts.map(([address]) => address)
-      expect(addresses).toEqual(utils.accounts.map(({ address }) => address))
+      expect(addresses).toEqual(utils.network.accounts.map(({ address }) => address))
     })
 
-    it('provides signers', async () => {
+    it('provides signers', () => {
       const signers = utils.providers.map((provider) => provider.getSigner())
-      const addresses = await Promise.all(signers.map((signer) => signer.getAddress()))
-      expect(addresses.map((address) => address.toLowerCase())).toEqual(utils.accounts.map(({ address }) => address))
+      expect(signers).toEqual(utils.wallets)
     })
 
     it('returns the network', async () => {
       const network = await utils.provider.getNetwork()
       expect(network.chainId).toBe(CHAIN_ID)
     })
+
+    it('provider returns the first provider', () => {
+      expect(utils.provider).toBe(utils.providers[0])
+    })
   })
 
-  describe('provider', () => {
-    it('returns the first provider', async () => {
-      expect(utils.providers[0]).toBe(utils.provider)
+  describe('wallets', () => {
+    it('are wallets', () => {
+      expect(utils.wallets.every((wallet) => wallet instanceof Wallet)).toBeTruthy()
+    })
+
+    it('reflects accounts', () => {
+      expect(
+        utils.wallets.map((wallet) => ({
+          address: wallet.address.toLowerCase(),
+          privateKey: wallet.privateKey,
+        }))
+      ).toEqual(utils.network.accounts)
+    })
+
+    it('wallet returns the first wallet', () => {
+      expect(utils.wallet).toBe(utils.wallets[0])
     })
   })
 
   describe('getBalance', () => {
     describe('with an impersonated account', () => {
       it('returns ETH balance', async () => {
-        const balance = await utils.getBalance(utils.account, ETH)
+        const balance = await utils.getBalance(utils.wallet, ETH)
         expect(balance.toExact()).toBe('10000')
       })
 
       it('returns UNI balance', async () => {
-        const balance = await utils.getBalance(utils.account, UNI)
+        const balance = await utils.getBalance(utils.wallet, UNI)
         expect(balance.toExact()).toBe('0')
       })
     })
@@ -106,9 +126,9 @@ describe('Hardhat', () => {
     it('calls into `fund`', async () => {
       const amount = CurrencyAmount.fromRawAmount(USDT, 10000).multiply(10 ** USDT.decimals)
       const whales = [USDT_TREASURY]
-      const fund = jest.spyOn(HardhatUtils.prototype, 'fund').mockResolvedValue()
-      await utils.setBalance(utils.account, amount, whales)
-      expect(fund).toHaveBeenCalledWith(utils.account, amount, whales)
+      const fund = jest.spyOn(Utils.prototype, 'fund').mockResolvedValue()
+      await utils.setBalance(utils.wallet, amount, whales)
+      expect(fund).toHaveBeenCalledWith(utils.wallet, amount, whales)
     })
   })
 
@@ -116,15 +136,15 @@ describe('Hardhat', () => {
     describe('with an impersonated account', () => {
       it('funds ETH balance', async () => {
         const amount = CurrencyAmount.fromRawAmount(ETH, 6000000).multiply(10 ** ETH.decimals)
-        await utils.fund(utils.account, amount)
-        const balance = await utils.getBalance(utils.account, ETH)
+        await utils.fund(utils.wallet, amount)
+        const balance = await utils.getBalance(utils.wallet, ETH)
         expect(balance.toExact()).toBe('6000000')
       })
 
       it('funds UNI balance', async () => {
         const amount = CurrencyAmount.fromRawAmount(UNI, 6000000).multiply(10 ** UNI.decimals)
-        await utils.fund(utils.account, amount)
-        const balance = await utils.getBalance(utils.account, UNI)
+        await utils.fund(utils.wallet, amount)
+        const balance = await utils.getBalance(utils.wallet, UNI)
         expect(balance.toExact()).toBe('6000000')
       })
     })
@@ -152,18 +172,18 @@ describe('Hardhat', () => {
       const amount = CurrencyAmount.fromRawAmount(USDT, 10000).multiply(10 ** USDT.decimals)
 
       // Try fund from address with no USDT.
-      await expect(utils.fund(utils.account, amount, [MINNOW])).rejects.toThrow(
+      await expect(utils.fund(utils.wallet, amount, [MINNOW])).rejects.toThrow(
         'Could not fund 10000 USDT from any whales'
       )
 
       // Successfully fund from address with USDT.
-      await utils.fund(utils.account, amount, [USDT_TREASURY])
-      const balance = await utils.getBalance(utils.account, USDT)
+      await utils.fund(utils.wallet, amount, [USDT_TREASURY])
+      const balance = await utils.getBalance(utils.wallet, USDT)
       expect(balance.toExact()).toBe('10000')
 
       // Successfully funds when 2nd whale has USDT but 1st does not.
-      await utils.fund(utils.account, amount, [MINNOW, USDT_TREASURY])
-      const balance2 = await utils.getBalance(utils.account, USDT)
+      await utils.fund(utils.wallet, amount, [MINNOW, USDT_TREASURY])
+      const balance2 = await utils.getBalance(utils.wallet, USDT)
       expect(balance2.toExact()).toBe('20000')
     })
   })
