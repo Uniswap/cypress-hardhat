@@ -5,8 +5,8 @@
 
 import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
 
-import { HardhatUtils } from './browser'
-import setup from './plugin/setup'
+import setup from '../plugin/setup'
+import { Utils } from './utils'
 
 const CHAIN_ID = 1
 const ETH = Ether.onChain(CHAIN_ID)
@@ -15,10 +15,10 @@ const USDT = new Token(CHAIN_ID, '0xdAC17F958D2ee523a2206206994597C13D831ec7', 6
 const USDT_TREASURY = '0x5754284f345afc66a98fbb0a0afe71e0f007b949'
 
 let env: Awaited<ReturnType<typeof setup>>
-let utils: HardhatUtils
+let utils: Utils
 beforeAll(async () => {
   env = await setup()
-  utils = new HardhatUtils(env)
+  utils = new Utils(env)
 })
 beforeEach(() => env.reset())
 afterEach(jest.restoreAllMocks)
@@ -88,7 +88,7 @@ describe('Hardhat', () => {
     it('calls into `fund`', async () => {
       const amount = CurrencyAmount.fromRawAmount(USDT, 10000).multiply(10 ** USDT.decimals)
       const whales = [USDT_TREASURY]
-      const fund = jest.spyOn(HardhatUtils.prototype, 'fund').mockResolvedValue()
+      const fund = jest.spyOn(Utils.prototype, 'fund').mockResolvedValue()
       await utils.setBalance(utils.account, amount, whales)
       expect(fund).toHaveBeenCalledWith(utils.account, amount, whales)
     })

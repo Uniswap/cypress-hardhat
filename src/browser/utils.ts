@@ -13,11 +13,9 @@ import { Wallet } from '@ethersproject/wallet'
 import { Currency, CurrencyAmount, Ether } from '@uniswap/sdk-core'
 import assert from 'assert'
 
-import { Erc20__factory } from './types'
-import { Network } from './types/Network'
+import { Erc20__factory } from '../types'
+import { Network } from '../types/Network'
 import { WHALES } from './whales'
-
-export { Network } from './types/Network'
 
 type AddressLike = string | { address: string }
 type OneOrMany<T> = T | T[]
@@ -41,7 +39,7 @@ class ImpersonatedSigner extends VoidSigner {
 const CHAIN_ID = 1
 const ETH = Ether.onChain(CHAIN_ID)
 
-export class HardhatUtils {
+export class Utils {
   /** The JSON-RPC url to connect to the hardhat network. */
   readonly url: string
   /** The accounts configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
