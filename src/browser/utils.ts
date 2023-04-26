@@ -240,7 +240,7 @@ class ApprovalUtils {
     return permit2.allowance(owner, tokenAddress, UNIVERSAL_ROUTER_ADDRESS(SupportedChainId.MAINNET))
   }
 
-  /** Sets the amount an address is allowed to spend via permit2 for the input token */
+  /** Sets the amount the Universal Router is permitted to spend for the input token */
   async permitUniversalRouter(
     owner: AddressLike,
     tokenAddress: AddressLike,
