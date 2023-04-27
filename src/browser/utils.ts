@@ -175,89 +175,103 @@ export class Utils {
   }
 }
 
-class ApprovalUtils {
-  readonly provider: JsonRpcProvider
+type ApprovalAddresses = {
+  owner: AddressLike
+  token: AddressLike
+  spender: AddressLike
+}
 
-  constructor(provider: JsonRpcProvider) {
-    this.provider = provider
+type Permit2ApprovalAddresses = Omit<ApprovalAddresses, 'spender'>
+
+function normalizeAddressLike(address: AddressLike): string {
+  return typeof address === 'string' ? address : address.address
+}
+
+function normalizeApprovalAddresses({ owner, token, spender }: ApprovalAddresses) {
+  return {
+    owner: normalizeAddressLike(owner),
+    token: normalizeAddressLike(token),
+    spender: normalizeAddressLike(spender),
+  }
+}
+
+class ApprovalUtils {
+  constructor(readonly provider: JsonRpcProvider) {}
+
+  get universalRouterAddress() {
+    return UNIVERSAL_ROUTER_ADDRESS(this.provider.network.chainId)
   }
 
   /** Returns the amount an address is approved to spend for the input token */
-  async getErc20Allowance(owner: AddressLike, tokenAddress: AddressLike, spender: AddressLike): Promise<BigNumber> {
-    if (typeof owner !== 'string') return this.getErc20Allowance(owner.address, tokenAddress, spender)
-    if (typeof tokenAddress !== 'string') return this.getErc20Allowance(owner, tokenAddress.address, spender)
-    if (typeof spender !== 'string') return this.getErc20Allowance(owner, tokenAddress, spender.address)
+  async getTokenAllowance(addresses: ApprovalAddresses): Promise<BigNumber> {
+    const { owner, token, spender } = normalizeApprovalAddresses(addresses)
 
-    const token = Erc20__factory.connect(tokenAddress, this.provider)
-    return await token.allowance(owner, spender)
+    const erc20 = Erc20__factory.connect(token, this.provider)
+    return await erc20.allowance(owner, spender)
   }
 
   /** Sets the amount an address is approved to spend for the input token */
-  async setErc20Approval(
-    owner: AddressLike,
-    tokenAddress: AddressLike,
-    spender: AddressLike,
-    amount: number
-  ): Promise<void> {
-    if (typeof owner !== 'string') return this.setErc20Approval(owner.address, tokenAddress, spender, amount)
-    if (typeof tokenAddress !== 'string') return this.setErc20Approval(owner, tokenAddress.address, spender, amount)
-    if (typeof spender !== 'string') return this.setErc20Approval(owner, tokenAddress, spender.address, amount)
+  async setTokenApproval(addresses: ApprovalAddresses, amount: number): Promise<void> {
+    const { owner, token, spender } = normalizeApprovalAddresses(addresses)
 
-    const token = Erc20__factory.connect(tokenAddress, new ImpersonatedSigner(owner, this.provider))
-    await token.approve(spender, amount)
+    const erc20 = Erc20__factory.connect(token, new ImpersonatedSigner(owner, this.provider))
+    await erc20.approve(spender, amount)
     return
   }
 
   /** Revokes an address's approval to spend the input token */
-  async revokeErc20Approval(owner: AddressLike, tokenAddress: AddressLike, spender: AddressLike): Promise<void> {
-    return this.setErc20Approval(owner, tokenAddress, spender, 0)
+  async revokeTokenApproval(addresses: ApprovalAddresses): Promise<void> {
+    return this.setTokenApproval(addresses, 0)
   }
 
   /** Returns the amount Permit2 is approved to spend for the input token */
-  async getPermit2Allowance(owner: AddressLike, tokenAddress: AddressLike): Promise<BigNumber> {
-    return await this.getErc20Allowance(owner, tokenAddress, PERMIT2_ADDRESS)
+  async getTokenAllowanceForPermit2(addresses: Permit2ApprovalAddresses): Promise<BigNumber> {
+    return await this.getTokenAllowance({ ...addresses, spender: PERMIT2_ADDRESS })
   }
 
   /** Sets the amount Permit2 is approved to spend for the input token */
-  async setPermit2Approval(owner: AddressLike, tokenAddress: AddressLike, amount: number) {
-    return this.setErc20Approval(owner, tokenAddress, PERMIT2_ADDRESS, amount)
+  async setTokenApprovalForPermit2(addresses: Permit2ApprovalAddresses, amount: number) {
+    return this.setTokenApproval({ ...addresses, spender: PERMIT2_ADDRESS }, amount)
   }
 
   /** Revokes Permit2's approval to spend the input token */
-  async revokePermit2Approval(owner: AddressLike, tokenAddress: AddressLike) {
-    return this.setPermit2Approval(owner, tokenAddress, 0)
+  async revokeTokenApprovalForPermit2(addresses: Permit2ApprovalAddresses) {
+    return this.setTokenApprovalForPermit2(addresses, 0)
   }
 
   /** Returns the amount and expiration of the Universal Router's permit2 approval for the input token */
-  async getUniversalRouterAllowance(
-    owner: AddressLike,
-    tokenAddress: AddressLike
+  async getPermit2Allowance(
+    { owner, token }: Permit2ApprovalAddresses,
+    router: AddressLike = this.universalRouterAddress
   ): Promise<{ amount: BigNumber; expiration: number }> {
-    if (typeof owner !== 'string') return this.getUniversalRouterAllowance(owner.address, tokenAddress)
-    if (typeof tokenAddress !== 'string') return this.getUniversalRouterAllowance(owner, tokenAddress.address)
+    const addresses = normalizeApprovalAddresses({ owner, token, spender: router })
 
     const permit2 = Permit2__factory.connect(PERMIT2_ADDRESS, this.provider)
-    return permit2.allowance(owner, tokenAddress, UNIVERSAL_ROUTER_ADDRESS(this.provider.network.chainId))
+    return permit2.allowance(addresses.owner, addresses.token, addresses.spender)
   }
 
   /** Sets the amount the Universal Router is permitted to spend for the input token */
-  async permitUniversalRouter(
-    owner: AddressLike,
-    tokenAddress: AddressLike,
+  async setPermit2Approval(
+    { owner, token }: Permit2ApprovalAddresses,
     amount: number,
-    expiration: number
+    expiration: number,
+    router: AddressLike = this.universalRouterAddress
   ): Promise<void> {
-    if (typeof owner !== 'string') return this.permitUniversalRouter(owner.address, tokenAddress, amount, expiration)
-    if (typeof tokenAddress !== 'string')
-      return this.permitUniversalRouter(owner, tokenAddress.address, amount, expiration)
+    const addresses = normalizeApprovalAddresses({ owner, token, spender: router })
 
-    const permit2 = AllowanceTransfer__factory.connect(PERMIT2_ADDRESS, new ImpersonatedSigner(owner, this.provider))
-    await permit2.approve(tokenAddress, UNIVERSAL_ROUTER_ADDRESS(this.provider.network.chainId), amount, expiration)
+    const permit2 = AllowanceTransfer__factory.connect(
+      PERMIT2_ADDRESS,
+      new ImpersonatedSigner(addresses.owner, this.provider)
+    )
+    await permit2.approve(addresses.token, addresses.spender, amount, expiration)
     return
   }
 
   /** Revokes the Universal Router's permit2 allowance to spend the input token */
-  async revokeUniversalRouter(owner: AddressLike, tokenAddress: AddressLike): Promise<void> {
-    return this.permitUniversalRouter(owner, tokenAddress, 0, 0)
+  async revokePermit2Approval(
+    { owner, token }: Permit2ApprovalAddresses,
+    router: AddressLike = this.universalRouterAddress
+  ): Promise<void> {
+    return this.setPermit2Approval({ owner, token }, 0, 0, router)
   }
 }
