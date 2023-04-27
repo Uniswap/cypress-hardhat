@@ -5,6 +5,7 @@
 
 import { Wallet } from '@ethersproject/wallet'
 import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
+import { BigNumber } from 'ethers/lib/ethers'
 
 import setup from '../plugin/setup'
 import { Utils } from './utils'
@@ -239,7 +240,7 @@ describe('Hardhat', () => {
         expect(originalPermit.amount.toNumber()).toBe(0)
         expect(originalPermit.expiration).toBe(0)
 
-        await utils.approval.setPermit2Approval({ owner, token }, 5, 1000)
+        await utils.approval.setPermit2Approval({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
 
         const updatedAllowance = await utils.approval.getPermit2Allowance({ owner, token })
         expect(updatedAllowance.amount.toNumber()).toBe(5)
@@ -247,7 +248,7 @@ describe('Hardhat', () => {
       })
       it("revokes Universal Router's permit for USDT", async () => {
         const owner = utils.wallet
-        await utils.approval.setPermit2Approval({ owner, token }, 5, 1000)
+        await utils.approval.setPermit2Approval({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
         await utils.approval.revokePermit2Approval({ owner, token })
 
         const allowance = await utils.approval.getPermit2Allowance({ owner, token })
