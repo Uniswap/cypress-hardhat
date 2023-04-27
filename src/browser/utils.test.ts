@@ -21,7 +21,6 @@ beforeAll(async () => {
   env = await setup()
   utils = new Utils(env)
 })
-beforeEach(() => env.reset())
 afterAll(() => env.close())
 
 const globalWithCy = global as typeof global & { cy: Cypress.cy }
@@ -29,9 +28,7 @@ beforeAll(() => {
   globalWithCy.cy = { task: jest.fn() as Cypress.cy['task'] } as Cypress.cy
 })
 
-beforeEach(jest.restoreAllMocks)
-
-describe('Hardhat', () => {
+describe('Utils', () => {
   describe('reset', () => {
     it('invokes hardhat:reset', () => {
       const chainable = {} as Cypress.Chainable
@@ -122,69 +119,73 @@ describe('Hardhat', () => {
     })
   })
 
-  describe('setBalance', () => {
-    it('calls into `fund`', async () => {
-      const amount = CurrencyAmount.fromRawAmount(USDT, 10000).multiply(10 ** USDT.decimals)
-      const whales = [USDT_TREASURY]
-      const fund = jest.spyOn(Utils.prototype, 'fund').mockResolvedValue()
-      await utils.setBalance(utils.wallet, amount, whales)
-      expect(fund).toHaveBeenCalledWith(utils.wallet, amount, whales)
-    })
-  })
+  describe('modifying on-chain data', () => {
+    afterEach(async () => await env.reset())
 
-  describe('fund', () => {
-    describe('with an impersonated account', () => {
-      it('funds ETH balance', async () => {
-        const amount = CurrencyAmount.fromRawAmount(ETH, 6000000).multiply(10 ** ETH.decimals)
-        await utils.fund(utils.wallet, amount)
-        const balance = await utils.getBalance(utils.wallet, ETH)
-        expect(balance.toExact()).toBe('6000000')
-      })
-
-      it('funds UNI balance', async () => {
-        const amount = CurrencyAmount.fromRawAmount(UNI, 6000000).multiply(10 ** UNI.decimals)
-        await utils.fund(utils.wallet, amount)
-        const balance = await utils.getBalance(utils.wallet, UNI)
-        expect(balance.toExact()).toBe('6000000')
+    describe('setBalance', () => {
+      it('calls into `fund`', async () => {
+        const amount = CurrencyAmount.fromRawAmount(USDT, 10000).multiply(10 ** USDT.decimals)
+        const whales = [USDT_TREASURY]
+        const fund = jest.spyOn(Utils.prototype, 'fund').mockResolvedValue()
+        await utils.setBalance(utils.wallet, amount, whales)
+        expect(fund).toHaveBeenCalledWith(utils.wallet, amount, whales)
       })
     })
 
-    describe('with an external address', () => {
-      const address = '0x6555e1cc97d3cba6eaddebbcd7ca51d75771e0b8'
+    describe('fund', () => {
+      describe('with an impersonated account', () => {
+        it('funds ETH balance', async () => {
+          const amount = CurrencyAmount.fromRawAmount(ETH, 6000000).multiply(10 ** ETH.decimals)
+          await utils.fund(utils.wallet, amount)
+          const balance = await utils.getBalance(utils.wallet, ETH)
+          expect(balance.toExact()).toBe('6000000')
+        })
 
-      it('funds ETH balance', async () => {
-        const amount = CurrencyAmount.fromRawAmount(ETH, 6000000).multiply(10 ** ETH.decimals)
-        await utils.fund(address, amount)
-        const balance = await utils.getBalance(address, ETH)
-        expect(balance.toExact()).toBe('6000000')
+        it('funds UNI balance', async () => {
+          const amount = CurrencyAmount.fromRawAmount(UNI, 6000000).multiply(10 ** UNI.decimals)
+          await utils.fund(utils.wallet, amount)
+          const balance = await utils.getBalance(utils.wallet, UNI)
+          expect(balance.toExact()).toBe('6000000')
+        })
       })
 
-      it('funds UNI balance', async () => {
-        const amount = CurrencyAmount.fromRawAmount(UNI, 6000000).multiply(10 ** UNI.decimals)
-        await utils.fund(address, amount)
-        const balance = await utils.getBalance(address, UNI)
-        expect(balance.toExact()).toBe('6000000.474792305572453152') // includes existing funds
+      describe('with an external address', () => {
+        const address = '0x6555e1cc97d3cba6eaddebbcd7ca51d75771e0b8'
+
+        it('funds ETH balance', async () => {
+          const amount = CurrencyAmount.fromRawAmount(ETH, 6000000).multiply(10 ** ETH.decimals)
+          await utils.fund(address, amount)
+          const balance = await utils.getBalance(address, ETH)
+          expect(balance.toExact()).toBe('6000000')
+        })
+
+        it('funds UNI balance', async () => {
+          const amount = CurrencyAmount.fromRawAmount(UNI, 6000000).multiply(10 ** UNI.decimals)
+          await utils.fund(address, amount)
+          const balance = await utils.getBalance(address, UNI)
+          expect(balance.toExact()).toBe('6000000.474792305572453152') // includes existing funds
+        })
       })
-    })
 
-    it('uses custom whales', async () => {
-      const MINNOW = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
-      const amount = CurrencyAmount.fromRawAmount(USDT, 10000).multiply(10 ** USDT.decimals)
+      it('uses custom whales', async () => {
+        const MINNOW = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
+        const amount = CurrencyAmount.fromRawAmount(USDT, 10000).multiply(10 ** USDT.decimals)
 
-      // Try fund from address with no USDT.
-      await expect(utils.fund(utils.wallet, amount, [MINNOW])).rejects.toThrow(
-        'Could not fund 10000 USDT from any whales'
-      )
+        // Try fund from address with no USDT.
+        await expect(utils.fund(utils.wallet, amount, [MINNOW])).rejects.toThrow(
+          'Could not fund 10000 USDT from any whales'
+        )
 
-      // Successfully fund from address with USDT.
-      await utils.fund(utils.wallet, amount, [USDT_TREASURY])
-      const balance = await utils.getBalance(utils.wallet, USDT)
-      expect(balance.toExact()).toBe('10000')
+        // Successfully fund from address with USDT.
+        await utils.fund(utils.wallet, amount, [USDT_TREASURY])
+        const balance = await utils.getBalance(utils.wallet, USDT)
+        expect(balance.toExact()).toBe('10000')
 
-      // Successfully funds when 2nd whale has USDT but 1st does not.
-      await utils.fund(utils.wallet, amount, [MINNOW, USDT_TREASURY])
-      const balance2 = await utils.getBalance(utils.wallet, USDT)
-      expect(balance2.toExact()).toBe('20000')
+        // Successfully funds when 2nd whale has USDT but 1st does not.
+        await utils.fund(utils.wallet, amount, [MINNOW, USDT_TREASURY])
+        const balance2 = await utils.getBalance(utils.wallet, USDT)
+        expect(balance2.toExact()).toBe('20000')
+      })
     })
   })
 })

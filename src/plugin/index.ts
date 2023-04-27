@@ -1,4 +1,3 @@
-/* eslint-disable import/no-unused-modules */
 import { Network } from '../types/Network'
 import setup from './setup'
 

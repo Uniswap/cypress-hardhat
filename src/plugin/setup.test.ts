@@ -6,19 +6,15 @@
 import { resetHardhatContext } from 'hardhat/plugins-testing'
 import { HardhatNetworkHDAccountsConfig, HardhatRuntimeEnvironment } from 'hardhat/types'
 
-function getAccountsConfig() {
-  return hre.network.config.accounts as HardhatNetworkHDAccountsConfig
-}
-
 let hre: HardhatRuntimeEnvironment
 let setup: typeof import('./setup').default
 beforeEach(async () => {
   resetHardhatContext()
-  jest.resetModules()
   hre = (await import('hardhat')).default as typeof hre
   setup = (await import('./setup')).default
 })
-afterEach(jest.restoreAllMocks)
+
+beforeEach(jest.resetModules)
 
 describe('setup', () => {
   it('throws if forking is not configured', async () => {
@@ -58,6 +54,10 @@ describe('setup', () => {
     })
 
     describe('accounts', () => {
+      function getAccountsConfig() {
+        return hre.network.config.accounts as HardhatNetworkHDAccountsConfig
+      }
+
       it('does not warn if 4 accounts are specified', async () => {
         getAccountsConfig().count = 4
         const warn = jest.spyOn(process.stderr, 'write')
