@@ -32,7 +32,7 @@ export class ApprovalUtils {
     return UNIVERSAL_ROUTER_ADDRESS(this.provider.network.chainId)
   }
 
-  /** Returns the amount an address is approved to spend for the input token */
+  /** Returns the amount an address is approved to spend for the input token. */
   async getTokenAllowance(addresses: ApprovalAddresses): Promise<Erc20Allowance> {
     const { owner, token, spender } = normalizeApprovalAddresses(addresses)
 
@@ -40,7 +40,7 @@ export class ApprovalUtils {
     return await erc20.allowance(owner, spender)
   }
 
-  /** Sets the amount an address is approved to spend for the input token */
+  /** Sets the amount an address is approved to spend for the input token. */
   async setTokenApproval(addresses: ApprovalAddresses, amount: number): Promise<void> {
     const { owner, token, spender } = normalizeApprovalAddresses(addresses)
 
@@ -49,17 +49,17 @@ export class ApprovalUtils {
     return
   }
 
-  /** Revokes an address's approval to spend the input token */
+  /** Revokes an address's approval to spend the input token. */
   async revokeTokenApproval(addresses: ApprovalAddresses): Promise<void> {
     return this.setTokenApproval(addresses, 0)
   }
 
-  /** Returns the amount Permit2 is approved to spend for the input token */
+  /** Returns the amount Permit2 is approved to spend for the input token. */
   async getTokenAllowanceForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>): Promise<Erc20Allowance> {
     return await this.getTokenAllowance({ ...addresses, spender: PERMIT2_ADDRESS })
   }
 
-  /** Sets the amount Permit2 is approved to spend for the input token */
+  /** Sets the amount Permit2 is approved to spend for the input token. */
   async setTokenApprovalForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>, amount: number) {
     return this.setTokenApproval({ ...addresses, spender: PERMIT2_ADDRESS }, amount)
   }
@@ -69,7 +69,7 @@ export class ApprovalUtils {
     return this.setTokenApprovalForPermit2(addresses, 0)
   }
 
-  /** Returns the amount and expiration of the Universal Router's permit2 approval for the input token */
+  /** Returns a spender's permit2 allowance for the input token. Spender is Universal Router by default. */
   async getPermit2Allowance({
     owner,
     token,
@@ -81,7 +81,7 @@ export class ApprovalUtils {
     return permit2.allowance(addresses.owner, addresses.token, addresses.spender)
   }
 
-  /** Sets the amount the Universal Router is permitted to spend for the input token */
+  /** Sets the amount/expiration for a spender's permit2 approval. Spender is Universal Router by default. */
   async setPermit2Approval(
     { owner, token, spender = this.universalRouterAddress }: Permit2ApprovalAddresses,
     { amount, expiration }: Permit2Allowance
@@ -96,7 +96,7 @@ export class ApprovalUtils {
     return
   }
 
-  /** Revokes the Universal Router's permit2 allowance to spend the input token */
+  /** Revokes a spender's permit2 allowance to spend the input token. Spender is Universal Router by default. */
   async revokePermit2Approval(addresses: Permit2ApprovalAddresses): Promise<void> {
     return this.setPermit2Approval(addresses, { amount: BigNumber.from(0), expiration: 0 })
   }
