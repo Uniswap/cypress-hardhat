@@ -1,43 +1,18 @@
 /* eslint-disable import/no-unused-modules */
-import { Signer, VoidSigner } from '@ethersproject/abstract-signer'
+import { Signer } from '@ethersproject/abstract-signer'
 import { hexValue } from '@ethersproject/bytes'
-import { resolveProperties } from '@ethersproject/properties'
-import {
-  JsonRpcProvider,
-  StaticJsonRpcProvider,
-  TransactionRequest,
-  TransactionResponse,
-} from '@ethersproject/providers'
+import { JsonRpcProvider, StaticJsonRpcProvider } from '@ethersproject/providers'
 import { parseUnits } from '@ethersproject/units'
 import { Wallet } from '@ethersproject/wallet'
-import { PERMIT2_ADDRESS } from '@uniswap/permit2-sdk'
 import { Currency, CurrencyAmount, Ether } from '@uniswap/sdk-core'
-import { UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk'
 import assert from 'assert'
-import { BigNumber } from 'ethers/lib/ethers'
 
-import { AllowanceTransfer__factory, Erc20__factory, Permit2__factory } from '../types'
+import { Erc20__factory } from '../types'
 import { Network } from '../types/Network'
+import { ApprovalUtils } from './approval'
+import { ImpersonatedSigner } from './signer'
+import { AddressLike, OneOrMany } from './types'
 import { WHALES } from './whales'
-
-type AddressLike = string | { address: string }
-type OneOrMany<T> = T | T[]
-
-class ImpersonatedSigner extends VoidSigner {
-  override readonly provider!: JsonRpcProvider
-
-  constructor(address: string, provider: JsonRpcProvider) {
-    super(address, provider)
-  }
-
-  async sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse> {
-    const tx = await resolveProperties(transaction)
-    tx.from = this.address
-    const hexTx = JsonRpcProvider.hexlifyTransaction(tx, { from: true })
-    const hash = await this.provider.send('eth_sendTransaction', [hexTx])
-    return this.provider.getTransaction(hash)
-  }
-}
 
 const CHAIN_ID = 1
 const ETH = Ether.onChain(CHAIN_ID)
@@ -172,106 +147,5 @@ export class Utils {
 
   private send(method: string, params: any[]) {
     return this.provider.send(method, params)
-  }
-}
-
-type ApprovalAddresses = {
-  owner: AddressLike
-  token: AddressLike
-  spender: AddressLike
-}
-
-type Permit2ApprovalAddresses = Omit<ApprovalAddresses, 'spender'>
-
-function normalizeAddressLike(address: AddressLike): string {
-  return typeof address === 'string' ? address : address.address
-}
-
-function normalizeApprovalAddresses({ owner, token, spender }: ApprovalAddresses) {
-  return {
-    owner: normalizeAddressLike(owner),
-    token: normalizeAddressLike(token),
-    spender: normalizeAddressLike(spender),
-  }
-}
-
-class ApprovalUtils {
-  constructor(readonly provider: JsonRpcProvider) {}
-
-  get universalRouterAddress() {
-    return UNIVERSAL_ROUTER_ADDRESS(this.provider.network.chainId)
-  }
-
-  /** Returns the amount an address is approved to spend for the input token */
-  async getTokenAllowance(addresses: ApprovalAddresses): Promise<BigNumber> {
-    const { owner, token, spender } = normalizeApprovalAddresses(addresses)
-
-    const erc20 = Erc20__factory.connect(token, this.provider)
-    return await erc20.allowance(owner, spender)
-  }
-
-  /** Sets the amount an address is approved to spend for the input token */
-  async setTokenApproval(addresses: ApprovalAddresses, amount: number): Promise<void> {
-    const { owner, token, spender } = normalizeApprovalAddresses(addresses)
-
-    const erc20 = Erc20__factory.connect(token, new ImpersonatedSigner(owner, this.provider))
-    await erc20.approve(spender, amount)
-    return
-  }
-
-  /** Revokes an address's approval to spend the input token */
-  async revokeTokenApproval(addresses: ApprovalAddresses): Promise<void> {
-    return this.setTokenApproval(addresses, 0)
-  }
-
-  /** Returns the amount Permit2 is approved to spend for the input token */
-  async getTokenAllowanceForPermit2(addresses: Permit2ApprovalAddresses): Promise<BigNumber> {
-    return await this.getTokenAllowance({ ...addresses, spender: PERMIT2_ADDRESS })
-  }
-
-  /** Sets the amount Permit2 is approved to spend for the input token */
-  async setTokenApprovalForPermit2(addresses: Permit2ApprovalAddresses, amount: number) {
-    return this.setTokenApproval({ ...addresses, spender: PERMIT2_ADDRESS }, amount)
-  }
-
-  /** Revokes Permit2's approval to spend the input token */
-  async revokeTokenApprovalForPermit2(addresses: Permit2ApprovalAddresses) {
-    return this.setTokenApprovalForPermit2(addresses, 0)
-  }
-
-  /** Returns the amount and expiration of the Universal Router's permit2 approval for the input token */
-  async getPermit2Allowance(
-    { owner, token }: Permit2ApprovalAddresses,
-    router: AddressLike = this.universalRouterAddress
-  ): Promise<{ amount: BigNumber; expiration: number }> {
-    const addresses = normalizeApprovalAddresses({ owner, token, spender: router })
-
-    const permit2 = Permit2__factory.connect(PERMIT2_ADDRESS, this.provider)
-    return permit2.allowance(addresses.owner, addresses.token, addresses.spender)
-  }
-
-  /** Sets the amount the Universal Router is permitted to spend for the input token */
-  async setPermit2Approval(
-    { owner, token }: Permit2ApprovalAddresses,
-    amount: number,
-    expiration: number,
-    router: AddressLike = this.universalRouterAddress
-  ): Promise<void> {
-    const addresses = normalizeApprovalAddresses({ owner, token, spender: router })
-
-    const permit2 = AllowanceTransfer__factory.connect(
-      PERMIT2_ADDRESS,
-      new ImpersonatedSigner(addresses.owner, this.provider)
-    )
-    await permit2.approve(addresses.token, addresses.spender, amount, expiration)
-    return
-  }
-
-  /** Revokes the Universal Router's permit2 allowance to spend the input token */
-  async revokePermit2Approval(
-    { owner, token }: Permit2ApprovalAddresses,
-    router: AddressLike = this.universalRouterAddress
-  ): Promise<void> {
-    return this.setPermit2Approval({ owner, token }, 0, 0, router)
   }
 }
