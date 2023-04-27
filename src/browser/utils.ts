@@ -20,7 +20,9 @@ const ETH = Ether.onChain(CHAIN_ID)
 export class Utils {
   /** Signing providers configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
   readonly providers: JsonRpcProvider[]
-  approval: ApprovalUtils
+
+  /** Utilities for getting/setting ERC-20 and Permit2 approvals. */
+  readonly approval: ApprovalUtils
 
   constructor(public network: Network) {
     this.providers = this.network.accounts.map((account) => {

@@ -199,15 +199,15 @@ describe('Hardhat', () => {
         const originalAllowance = await utils.approval.getTokenAllowance({ owner, token, spender })
         expect(originalAllowance.toNumber()).toBe(0)
 
-        await utils.approval.setTokenApproval({ owner, token, spender }, 5)
+        await utils.approval.setTokenAllowance({ owner, token, spender }, 5)
 
         const updatedAllowance = await utils.approval.getTokenAllowance({ owner, token, spender })
         expect(updatedAllowance.toNumber()).toBe(5)
       })
       it('revokes USDT', async () => {
         const owner = utils.wallet
-        await utils.approval.setTokenApproval({ owner, token, spender }, 5)
-        await utils.approval.revokeTokenApproval({ owner, token, spender })
+        await utils.approval.setTokenAllowance({ owner, token, spender }, 5)
+        await utils.approval.revokeTokenAllowance({ owner, token, spender })
 
         const allowance = await utils.approval.getTokenAllowance({ owner, token, spender })
         expect(allowance.toNumber()).toBe(0)
@@ -219,15 +219,15 @@ describe('Hardhat', () => {
         const originalAllowance = await utils.approval.getTokenAllowanceForPermit2({ owner, token })
         expect(originalAllowance.toNumber()).toBe(0)
 
-        await utils.approval.setTokenApprovalForPermit2({ owner, token }, 5)
+        await utils.approval.setTokenAllowanceForPermit2({ owner, token }, 5)
 
         const updatedAllowance = await utils.approval.getTokenAllowanceForPermit2({ owner, token })
         expect(updatedAllowance.toNumber()).toBe(5)
       })
       it('revokes USDT for Permit2', async () => {
         const owner = utils.wallet
-        await utils.approval.setTokenApprovalForPermit2({ owner, token }, 5)
-        await utils.approval.revokeTokenApprovalForPermit2({ owner, token })
+        await utils.approval.setTokenAllowanceForPermit2({ owner, token }, 5)
+        await utils.approval.revokeTokenAllowanceForPermit2({ owner, token })
 
         const allowance = await utils.approval.getTokenAllowanceForPermit2({ owner, token })
         expect(allowance.toNumber()).toBe(0)
@@ -240,7 +240,7 @@ describe('Hardhat', () => {
         expect(originalPermit.amount.toNumber()).toBe(0)
         expect(originalPermit.expiration).toBe(0)
 
-        await utils.approval.setPermit2Approval({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
+        await utils.approval.setPermit2Allowance({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
 
         const updatedAllowance = await utils.approval.getPermit2Allowance({ owner, token })
         expect(updatedAllowance.amount.toNumber()).toBe(5)
@@ -248,7 +248,7 @@ describe('Hardhat', () => {
       })
       it("revokes Universal Router's permit for USDT", async () => {
         const owner = utils.wallet
-        await utils.approval.setPermit2Approval({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
+        await utils.approval.setPermit2Allowance({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
         await utils.approval.revokePermit2Approval({ owner, token })
 
         const allowance = await utils.approval.getPermit2Allowance({ owner, token })
