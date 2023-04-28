@@ -1,12 +1,6 @@
-import { Signer, VoidSigner } from '@ethersproject/abstract-signer'
+import { Signer } from '@ethersproject/abstract-signer'
 import { hexValue } from '@ethersproject/bytes'
-import { resolveProperties } from '@ethersproject/properties'
-import {
-  JsonRpcProvider,
-  StaticJsonRpcProvider,
-  TransactionRequest,
-  TransactionResponse,
-} from '@ethersproject/providers'
+import { JsonRpcProvider, StaticJsonRpcProvider } from '@ethersproject/providers'
 import { parseUnits } from '@ethersproject/units'
 import { Wallet } from '@ethersproject/wallet'
 import { Currency, CurrencyAmount, Ether } from '@uniswap/sdk-core'
@@ -14,26 +8,10 @@ import assert from 'assert'
 
 import { Erc20__factory } from '../types'
 import { Network } from '../types/Network'
+import { ApprovalUtils } from './approval'
+import { ImpersonatedSigner } from './signer'
+import { AddressLike, OneOrMany } from './types'
 import { WHALES } from './whales'
-
-type AddressLike = string | { address: string }
-type OneOrMany<T> = T | T[]
-
-class ImpersonatedSigner extends VoidSigner {
-  override readonly provider!: JsonRpcProvider
-
-  constructor(address: string, provider: JsonRpcProvider) {
-    super(address, provider)
-  }
-
-  async sendTransaction(transaction: TransactionRequest): Promise<TransactionResponse> {
-    const tx = await resolveProperties(transaction)
-    tx.from = this.address
-    const hexTx = JsonRpcProvider.hexlifyTransaction(tx, { from: true })
-    const hash = await this.provider.send('eth_sendTransaction', [hexTx])
-    return this.provider.getTransaction(hash)
-  }
-}
 
 const CHAIN_ID = 1
 const ETH = Ether.onChain(CHAIN_ID)
@@ -41,6 +19,9 @@ const ETH = Ether.onChain(CHAIN_ID)
 export class Utils {
   /** Signing providers configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
   readonly providers: JsonRpcProvider[]
+
+  /** Utilities for getting/setting ERC-20 and Permit2 approvals. */
+  readonly approval: ApprovalUtils
 
   constructor(public network: Network) {
     this.providers = this.network.accounts.map((account) => {
@@ -59,6 +40,7 @@ export class Utils {
         },
       })
     })
+    this.approval = new ApprovalUtils(this.provider)
   }
 
   reset() {
