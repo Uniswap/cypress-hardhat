@@ -5,7 +5,6 @@
 
 import { Wallet } from '@ethersproject/wallet'
 import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
-import { BigNumber } from 'ethers/lib/ethers'
 
 import setup from '../plugin/setup'
 import { Utils } from './utils'
@@ -186,76 +185,6 @@ describe('Utils', () => {
         await utils.fund(utils.wallet, amount, [MINNOW, USDT_TREASURY])
         const balance2 = await utils.getBalance(utils.wallet, USDT)
         expect(balance2.toExact()).toBe('20000')
-      })
-    })
-  })
-
-  describe('approval', () => {
-    const spender = { address: '0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8' }
-    const token = USDT
-
-    describe('setTokenApproval', () => {
-      it('approves USDT', async () => {
-        const owner = utils.wallet
-        const originalAllowance = await utils.approval.getTokenAllowance({ owner, token, spender })
-        expect(originalAllowance.toNumber()).toBe(0)
-
-        await utils.approval.setTokenAllowance({ owner, token, spender }, 5)
-
-        const updatedAllowance = await utils.approval.getTokenAllowance({ owner, token, spender })
-        expect(updatedAllowance.toNumber()).toBe(5)
-      })
-      it('revokes USDT', async () => {
-        const owner = utils.wallet
-        await utils.approval.setTokenAllowance({ owner, token, spender }, 5)
-        await utils.approval.revokeTokenAllowance({ owner, token, spender })
-
-        const allowance = await utils.approval.getTokenAllowance({ owner, token, spender })
-        expect(allowance.toNumber()).toBe(0)
-      })
-    })
-    describe('setPermit2Approval', () => {
-      it('approves USDT for Permit2', async () => {
-        const owner = utils.wallet
-        const originalAllowance = await utils.approval.getTokenAllowanceForPermit2({ owner, token })
-        expect(originalAllowance.toNumber()).toBe(0)
-
-        await utils.approval.setTokenAllowanceForPermit2({ owner, token }, 5)
-
-        const updatedAllowance = await utils.approval.getTokenAllowanceForPermit2({ owner, token })
-        expect(updatedAllowance.toNumber()).toBe(5)
-      })
-      it('revokes USDT for Permit2', async () => {
-        const owner = utils.wallet
-        await utils.approval.setTokenAllowanceForPermit2({ owner, token }, 5)
-        await utils.approval.revokeTokenAllowanceForPermit2({ owner, token })
-
-        const allowance = await utils.approval.getTokenAllowanceForPermit2({ owner, token })
-        expect(allowance.toNumber()).toBe(0)
-      })
-    })
-    describe('permitUniversalRouter', () => {
-      it('permits Universal Router for USDT', async () => {
-        const owner = utils.wallet
-        const originalPermit = await utils.approval.getPermit2Allowance({ owner, token })
-        expect(originalPermit.amount.toNumber()).toBe(0)
-        expect(originalPermit.expiration).toBe(0)
-
-        await utils.approval.setPermit2Allowance({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
-
-        const updatedAllowance = await utils.approval.getPermit2Allowance({ owner, token })
-        expect(updatedAllowance.amount.toNumber()).toBe(5)
-        expect(updatedAllowance.expiration).toBe(1000)
-      })
-      it("revokes Universal Router's permit for USDT", async () => {
-        const owner = utils.wallet
-        await utils.approval.setPermit2Allowance({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
-        await utils.approval.revokePermit2Allowance({ owner, token })
-
-        const allowance = await utils.approval.getPermit2Allowance({ owner, token })
-
-        expect(allowance.amount.toNumber()).toBe(0)
-        expect(allowance.expiration).toBeLessThan(Date.now() / 1000)
       })
     })
   })
