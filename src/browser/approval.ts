@@ -27,6 +27,7 @@ function normalizeApprovalAddresses({ owner, token, spender }: ApprovalAddresses
 export class ApprovalUtils {
   constructor(readonly provider: JsonRpcProvider) {}
 
+  /** Returns the address of the Universal Router for the current chain */
   get universalRouterAddress() {
     return UNIVERSAL_ROUTER_ADDRESS(this.provider.network.chainId)
   }

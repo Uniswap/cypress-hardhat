@@ -11,8 +11,7 @@ import { ApprovalUtils } from './approval'
 import { AddressLike } from './types'
 import { Utils } from './utils'
 
-const CHAIN_ID = 1
-const token = new Token(CHAIN_ID, '0xdAC17F958D2ee523a2206206994597C13D831ec7', 6, 'USDT')
+const token = new Token(1, '0xdAC17F958D2ee523a2206206994597C13D831ec7', 6, 'USDT')
 
 let env: Awaited<ReturnType<typeof setup>>
 let approval: ApprovalUtils
@@ -26,6 +25,7 @@ beforeAll(async () => {
   spender = utils.network.accounts[1]
   owner = utils.wallet.address
 })
+beforeEach(async () => await env.reset())
 afterAll(() => env.close())
 
 const globalWithCy = global as typeof global & { cy: Cypress.cy }
@@ -34,8 +34,6 @@ beforeAll(() => {
 })
 
 describe('Approval', () => {
-  afterEach(async () => await env.reset())
-
   describe('setTokenAllowance', () => {
     it('approves USDT', async () => {
       const originalAllowance = await approval.getTokenAllowance({ owner, token, spender })
