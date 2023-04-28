@@ -34,6 +34,8 @@ beforeAll(() => {
 })
 
 describe('Approval', () => {
+  afterEach(async () => await env.reset())
+
   describe('setTokenAllowance', () => {
     it('approves USDT', async () => {
       const originalAllowance = await approval.getTokenAllowance({ owner, token, spender })
