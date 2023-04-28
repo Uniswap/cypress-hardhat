@@ -250,7 +250,7 @@ describe('Utils', () => {
       it("revokes Universal Router's permit for USDT", async () => {
         const owner = utils.wallet
         await utils.approval.setPermit2Allowance({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
-        await utils.approval.revokePermit2Approval({ owner, token })
+        await utils.approval.revokePermit2Allowance({ owner, token })
 
         const allowance = await utils.approval.getPermit2Allowance({ owner, token })
 

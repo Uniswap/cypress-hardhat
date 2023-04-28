@@ -95,7 +95,7 @@ export class ApprovalUtils {
   }
 
   /** Sets a spender's Permit2 allowance by the owner for the token to 0. Spender is Universal Router by default. */
-  async revokePermit2Approval(addresses: Permit2ApprovalAddresses): Promise<void> {
+  async revokePermit2Allowance(addresses: Permit2ApprovalAddresses): Promise<void> {
     return this.setPermit2Allowance(addresses, { amount: BigNumber.from(0), expiration: 0 })
   }
 }

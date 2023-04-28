@@ -1,4 +1,3 @@
-/* eslint-disable import/no-unused-modules */
 import { Signer } from '@ethersproject/abstract-signer'
 import { hexValue } from '@ethersproject/bytes'
 import { JsonRpcProvider, StaticJsonRpcProvider } from '@ethersproject/providers'
