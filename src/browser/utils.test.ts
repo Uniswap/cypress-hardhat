@@ -187,5 +187,23 @@ describe('Utils', () => {
         expect(balance2.toExact()).toBe('20000')
       })
     })
+
+    describe('mine', () => {
+      it('mines 1 block with 12s interval by default', async () => {
+        const block = await utils.send('eth_getBlockByNumber', ['latest', false])
+        await utils.mine()
+        const latest = await utils.send('eth_getBlockByNumber', ['latest', false])
+        expect(Number(latest.number)).toBe(Number(block.number) + 1)
+        expect(Number(latest.timestamp)).toBe(Number(block.timestamp) + 12)
+      })
+
+      it('mines n blocks with blockInterval', async () => {
+        const block = await utils.send('eth_getBlockByNumber', ['latest', false])
+        await utils.mine(100, 42)
+        const latest = await utils.send('eth_getBlockByNumber', ['latest', false])
+        expect(Number(latest.number)).toBe(Number(block.number) + 100)
+        expect(Number(latest.timestamp)).toBe(Number(block.timestamp) + 42 * 100)
+      })
+    })
   })
 })
