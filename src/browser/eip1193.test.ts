@@ -54,25 +54,27 @@ describe('Eip1193', () => {
     await expect(provider.send('eth_unknownMethod')).rejects.toThrow()
   })
 
-  it('eth_requestAccounts', async () => {
-    await expect(provider.send('eth_requestAccounts')).resolves.toEqual([utils.wallet.address])
+  describe('reads', () => {
+    it('eth_requestAccounts', async () => {
+      await expect(provider.send('eth_requestAccounts')).resolves.toEqual([utils.wallet.address])
+    })
+
+    it('eth_accounts', async () => {
+      await expect(provider.send('eth_accounts')).resolves.toEqual([utils.wallet.address])
+    })
+
+    it('eth_chainId', async () => {
+      await expect(provider.send('eth_chainId')).resolves.toEqual('0x1')
+    })
+
+    it('eth_blockNumber', async () => {
+      const send = jest.spyOn(Eip1193Bridge.prototype, 'send')
+      await expect(provider.send('eth_blockNumber')).resolves.toEqual(expect.any(Number))
+      expect(send).toHaveBeenCalledWith('eth_blockNumber', undefined)
+    })
   })
 
-  it('eth_accounts', async () => {
-    await expect(provider.send('eth_accounts')).resolves.toEqual([utils.wallet.address])
-  })
-
-  it('eth_chainId', async () => {
-    await expect(provider.send('eth_chainId')).resolves.toEqual('0x1')
-  })
-
-  it('eth_blockNumber', async () => {
-    const send = jest.spyOn(Eip1193Bridge.prototype, 'send')
-    await expect(provider.send('eth_blockNumber')).resolves.toEqual(expect.any(Number))
-    expect(send).toHaveBeenCalledWith('eth_blockNumber', undefined)
-  })
-
-  describe('modifying on-chain data', () => {
+  describe('writes', () => {
     afterEach(async () => await env.reset())
 
     it('eth_sendTransaction', async () => {

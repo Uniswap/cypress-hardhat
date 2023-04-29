@@ -157,7 +157,7 @@ export class Utils {
   }
 
   /** Sends a JSON-RPC directly to hardhat. */
-  send(method: string, params?: any[]) {
-    return this.provider.send(method, params ?? [])
+  send(method: string, params: any[]) {
+    return this.provider.send(method, params)
   }
 }
