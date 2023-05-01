@@ -146,7 +146,18 @@ export class Utils {
     )
   }
 
-  private send(method: string, params: any[]) {
+  /**
+   * Mines block(s), including any valid transactions in the mempool.
+   * The duration between blocks can be controlled by passing blockInterval, which is specified in seconds.
+   */
+  async mine(count = 1, blockInterval = 12) {
+    // blockInterval will only apply to blocks after the first, so the next block will need time to be explicitly increased.
+    await this.send('evm_increaseTime', [hexValue(blockInterval)])
+    return this.send('hardhat_mine', [hexValue(count), hexValue(blockInterval)])
+  }
+
+  /** Sends a JSON-RPC directly to hardhat. */
+  send(method: string, params: any[]) {
     return this.provider.send(method, params)
   }
 }
