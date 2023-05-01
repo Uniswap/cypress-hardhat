@@ -2,6 +2,9 @@ name: Release
 
 on:
   workflow_dispatch: # manually
+  push: # continuous deployment
+    branches:
+      - main
 
 jobs:
   release:
