@@ -14,8 +14,9 @@ export default async function setup(): Promise<
     close: () => Promise<void>
   }
 > {
-  const forking = hre.config.networks.hardhat.forking
-  if (!forking) {
+  const hardhatConfig = hre.config.networks.hardhat
+  const forkingConfig = hardhatConfig.forking
+  if (!forkingConfig) {
     throw new Error(
       '`forking` must be specified to use `cypress-hardhat`.\nSee https://hardhat.org/hardhat-network/guides/mainnet-forking.html#mainnet-forking.'
     )
@@ -52,10 +53,13 @@ export default async function setup(): Promise<
     reset: () =>
       hre.network.provider.send('hardhat_reset', [
         {
+          hardhat: {
+            mining: hardhatConfig.mining,
+          },
           forking: {
-            jsonRpcUrl: forking.url,
-            blockNumber: forking.blockNumber,
-            httpHeaders: forking.httpHeaders,
+            jsonRpcUrl: forkingConfig.url,
+            blockNumber: forkingConfig.blockNumber,
+            httpHeaders: forkingConfig.httpHeaders,
           },
         },
       ]),

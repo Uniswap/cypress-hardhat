@@ -146,13 +146,19 @@ export class Utils {
     )
   }
 
+  async setAutomine(automine: boolean) {
+    await this.send('evm_setAutomine', [automine])
+  }
+
   /**
    * Mines block(s), including any valid transactions in the mempool.
    * The duration between blocks can be controlled by passing blockInterval, which is specified in seconds.
+   * blockInterval will be applied to all blocks mined, including between the current and the first mined.
    */
   async mine(count = 1, blockInterval = 12) {
-    // blockInterval will only apply to blocks after the first, so the next block will need time to be explicitly increased.
-    await this.send('evm_increaseTime', [hexValue(blockInterval)])
+    // blockInterval will only apply to blocks after the first, so the next block will need its timestamp explicitly set.
+    const { timestamp } = await this.send('eth_getBlockByNumber', ['latest', false])
+    await this.send('evm_setNextBlockTimestamp', [hexValue(Number(timestamp) + blockInterval)])
     return this.send('hardhat_mine', [hexValue(count), hexValue(blockInterval)])
   }
 

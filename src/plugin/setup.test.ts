@@ -26,7 +26,7 @@ describe('setup', () => {
     let send: jest.SpyInstance
     let env: Awaited<ReturnType<typeof setup>>
     beforeEach(() => {
-      send = jest.spyOn(hre.network.provider, 'send').mockResolvedValue(undefined)
+      send = jest.spyOn(hre.network.provider, 'send')
     })
     afterEach(async () => await env.close())
 
@@ -46,11 +46,27 @@ describe('setup', () => {
           },
         ],
       })
+    })
+
+    it('resets the environment', async () => {
+      env = await setup()
+      const blockNumber = await hre.network.provider.send('eth_blockNumber', [])
+      hre.network.provider.send('evm_setAutomine', [false])
+      hre.network.provider.send('evm_mine', [])
 
       await env.reset()
       expect(send).toHaveBeenCalledWith('hardhat_reset', [
-        { forking: expect.objectContaining({ jsonRpcUrl: expect.any(String), blockNumber: expect.any(Number) }) },
+        {
+          hardhat: { mining: expect.objectContaining({ auto: true }) },
+          forking: expect.objectContaining({
+            jsonRpcUrl: expect.any(String),
+            blockNumber: expect.any(Number),
+            httpHeaders: expect.any(Object),
+          }),
+        },
       ])
+      await expect(hre.network.provider.send('eth_blockNumber', [])).resolves.toBe(blockNumber)
+      await expect(hre.network.provider.send('hardhat_getAutomine', [])).resolves.toBe(true)
     })
 
     describe('accounts', () => {
