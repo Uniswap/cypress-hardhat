@@ -7,6 +7,7 @@ import { Wallet } from '@ethersproject/wallet'
 import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
 
 import setup from '../plugin/setup'
+import { Network } from '../types/Network'
 import { Utils } from './utils'
 
 const CHAIN_ID = 1
@@ -30,11 +31,25 @@ beforeAll(() => {
 
 describe('Utils', () => {
   describe('reset', () => {
+    beforeEach(() => {
+      jest.mocked(cy.task).mockImplementation(() => env.reset() as unknown as Cypress.Chainable<Network>)
+    })
+
     it('invokes hardhat:reset', () => {
-      const chainable = {} as Cypress.Chainable
-      jest.mocked(globalWithCy.cy.task).mockReturnValueOnce(chainable)
-      expect(utils.reset()).toBe(chainable)
+      utils.reset()
       expect(cy.task).toHaveBeenCalledWith('hardhat:reset')
+    })
+
+    it('resets the providers', async () => {
+      const initialBlockNumbers = await Promise.all(utils.providers.map((provider) => provider.getBlockNumber()))
+      await utils.mine(100)
+      await new Promise<void>((resolve) => {
+        utils.reset().then(async () => {
+          const blockNumbers = await Promise.all(utils.providers.map((provider) => provider.getBlockNumber()))
+          expect(blockNumbers).toEqual(initialBlockNumbers)
+          resolve()
+        })
+      })
     })
   })
 
@@ -223,6 +238,21 @@ describe('Utils', () => {
       const latest = await utils.send('eth_getBlockByNumber', ['latest', false])
       expect(Number(latest.number)).toBe(Number(block.number) + 100)
       expect(Number(latest.timestamp)).toBe(Number(block.timestamp) + 42 * 100)
+    })
+
+    it('updates providers immediately', async () => {
+      const { number: blockNumber } = await utils.send('eth_getBlockByNumber', ['latest', false])
+      const emitsBlock = new Promise<void>((resolve) => {
+        const onBlock = (block: number) => {
+          if (block === Number(blockNumber) + 1) {
+            utils.provider.off('block', onBlock)
+            resolve()
+          }
+        }
+        utils.provider.on('block', onBlock)
+      })
+      await utils.mine()
+      await expect(emitsBlock).resolves.toBeUndefined()
     })
   })
 })

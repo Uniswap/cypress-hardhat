@@ -1,6 +1,6 @@
 import { Signer } from '@ethersproject/abstract-signer'
 import { hexValue } from '@ethersproject/bytes'
-import { JsonRpcProvider, StaticJsonRpcProvider } from '@ethersproject/providers'
+import { JsonRpcProvider } from '@ethersproject/providers'
 import { parseUnits } from '@ethersproject/units'
 import { Wallet } from '@ethersproject/wallet'
 import { Currency, CurrencyAmount, Ether } from '@uniswap/sdk-core'
@@ -9,6 +9,7 @@ import assert from 'assert'
 import { Erc20__factory } from '../types'
 import { Network } from '../types/Network'
 import { ApprovalUtils } from './approval'
+import { HardhatProvider } from './provider'
 import { ImpersonatedSigner } from './signer'
 import { AddressLike, OneOrMany } from './types'
 import { WHALES } from './whales'
@@ -25,7 +26,7 @@ export class Utils {
 
   constructor(public network: Network) {
     this.providers = this.network.accounts.map((account) => {
-      const provider = new StaticJsonRpcProvider(this.network.url, { chainId: 1, name: 'mainnet' })
+      const provider = new HardhatProvider(this.network.url, { chainId: 1, name: 'mainnet' })
       const wallet = new Wallet(account, provider)
       return new Proxy(provider, {
         get(target, prop) {
@@ -44,7 +45,12 @@ export class Utils {
   }
 
   reset() {
-    return cy.task('hardhat:reset')
+    return (
+      cy
+        .task('hardhat:reset')
+        // Providers will not "rewind" to an older block number, so they must be reset.
+        .then(() => Promise.all(this.providers.map((provider) => (provider as HardhatProvider).reset())))
+    )
   }
 
   /** The primary signing provider configured via hardhat - @see {@link providers}. */
@@ -159,7 +165,16 @@ export class Utils {
     // blockInterval will only apply to blocks after the first, so the next block will need its timestamp explicitly set.
     const { timestamp } = await this.send('eth_getBlockByNumber', ['latest', false])
     await this.send('evm_setNextBlockTimestamp', [hexValue(Number(timestamp) + blockInterval)])
-    return this.send('hardhat_mine', [hexValue(count), hexValue(blockInterval)])
+    await this.send('hardhat_mine', [hexValue(count), hexValue(blockInterval)])
+    // Immediately update providers with the newly mined state.
+    await Promise.all(
+      this.providers.map(async (provider) => {
+        // Update the block number. poll() is debounced, but getBlockNumber() is not.
+        await provider.getBlockNumber()
+        // Emit the new block number. Only poll will emit a 'block' event.
+        await provider.poll()
+      })
+    )
   }
 
   /** Sends a JSON-RPC directly to hardhat. */
