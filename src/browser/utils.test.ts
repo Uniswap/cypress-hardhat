@@ -196,6 +196,17 @@ describe('Utils', () => {
     })
   })
 
+  describe('setAutomine', () => {
+    afterEach(async () => await env.reset())
+    it('sets automine to true', async () => {
+      await utils.setAutomine(false)
+      await expect(utils.send('hardhat_getAutomine', [])).resolves.toBe(false)
+
+      await utils.setAutomine(true)
+      await expect(utils.send('hardhat_getAutomine', [])).resolves.toBe(true)
+    })
+  })
+
   describe('mine', () => {
     afterEach(async () => await env.reset())
     it('mines 1 block with 12s interval by default', async () => {
