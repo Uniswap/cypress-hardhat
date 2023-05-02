@@ -1,7 +1,7 @@
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { MaxUint160, MaxUint256, PERMIT2_ADDRESS } from '@uniswap/permit2-sdk'
 import { UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk'
-import { BigNumber, constants } from 'ethers/lib/ethers'
+import { BigNumber, BigNumberish, constants } from 'ethers/lib/ethers'
 
 import { AllowanceTransfer__factory, Erc20__factory, Permit2__factory } from '../types'
 import { ImpersonatedSigner } from './signer'
@@ -11,7 +11,7 @@ type ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender: Addr
 type Permit2ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender?: AddressLike }
 
 type Permit2Allowance = { amount: BigNumber; expiration: number }
-type Permit2AllowanceInput = Permit2Allowance & { amount?: BigNumber }
+type Permit2AllowanceInput = { amount?: BigNumberish; expiration: number }
 
 function normalizeAddressLike(address: AddressLike): string {
   return typeof address === 'string' ? address : address.address
@@ -42,7 +42,7 @@ export class ApprovalUtils {
   }
 
   /** Sets the amount the spender is allowed by the owner to spend for the token. */
-  async setTokenAllowance(addresses: ApprovalAddresses, amount: BigNumber): Promise<void> {
+  async setTokenAllowance(addresses: ApprovalAddresses, amount: BigNumberish = MaxUint256): Promise<void> {
     const { owner, token, spender } = normalizeApprovalAddresses(addresses)
 
     const erc20 = Erc20__factory.connect(token, new ImpersonatedSigner(owner, this.provider))
@@ -60,7 +60,7 @@ export class ApprovalUtils {
   }
 
   /** Sets the amount Permit2 is allowed by the owner to spend for the token. */
-  async setTokenAllowanceForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>, amount: BigNumber = MaxUint256) {
+  async setTokenAllowanceForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>, amount?: BigNumberish) {
     return this.setTokenAllowance({ ...addresses, spender: PERMIT2_ADDRESS }, amount)
   }
 
