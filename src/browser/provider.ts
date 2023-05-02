@@ -2,7 +2,6 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers'
 
 export class HardhatProvider extends StaticJsonRpcProvider {
   async reset() {
-    this.resetEventsBlock
     // Reset all internal block number guards and caches.
     // See https://github.com/ethers-io/ethers.js/blob/v5/packages/providers/src.ts/base-provider.ts#L1168-L1175.
     this._lastBlockNumber = -2

@@ -242,6 +242,7 @@ describe('Utils', () => {
 
     it('updates providers immediately', async () => {
       const { number: blockNumber } = await utils.send('eth_getBlockByNumber', ['latest', false])
+      // Wrap block event emission in a promise so the test will wait for it to resolve.
       const emitsBlock = new Promise<void>((resolve) => {
         const onBlock = (block: number) => {
           if (block === Number(blockNumber) + 1) {
