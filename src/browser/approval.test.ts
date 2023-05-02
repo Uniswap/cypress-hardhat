@@ -4,7 +4,7 @@
  */
 
 import { Token } from '@uniswap/sdk-core'
-import { BigNumber } from 'ethers/lib/ethers'
+import { BigNumber, constants } from 'ethers/lib/ethers'
 
 import setup from '../plugin/setup'
 import { ApprovalUtils } from './approval'
@@ -34,61 +34,62 @@ beforeAll(() => {
 })
 
 describe('Approval', () => {
+  const amount = BigNumber.from(5)
   describe('setTokenAllowance', () => {
     it('approves USDT', async () => {
       const originalAllowance = await approval.getTokenAllowance({ owner, token, spender })
-      expect(originalAllowance.toNumber()).toBe(0)
+      expect(originalAllowance).toMatchObject(constants.Zero)
 
-      await approval.setTokenAllowance({ owner, token, spender }, 5)
+      await approval.setTokenAllowance({ owner, token, spender }, amount)
 
       const updatedAllowance = await approval.getTokenAllowance({ owner, token, spender })
-      expect(updatedAllowance.toNumber()).toBe(5)
+      expect(updatedAllowance).toMatchObject(amount)
     })
     it('revokes USDT', async () => {
-      await approval.setTokenAllowance({ owner, token, spender }, 5)
+      await approval.setTokenAllowance({ owner, token, spender }, amount)
       await approval.revokeTokenAllowance({ owner, token, spender })
 
       const allowance = await approval.getTokenAllowance({ owner, token, spender })
-      expect(allowance.toNumber()).toBe(0)
+      expect(allowance).toMatchObject(constants.Zero)
     })
   })
   describe('setTokenAllowanceForPermit2', () => {
     it('approves USDT for Permit2', async () => {
       const originalAllowance = await approval.getTokenAllowanceForPermit2({ owner, token })
-      expect(originalAllowance.toNumber()).toBe(0)
+      expect(originalAllowance).toMatchObject(constants.Zero)
 
-      await approval.setTokenAllowanceForPermit2({ owner, token }, 5)
+      await approval.setTokenAllowanceForPermit2({ owner, token }, amount)
 
       const updatedAllowance = await approval.getTokenAllowanceForPermit2({ owner, token })
-      expect(updatedAllowance.toNumber()).toBe(5)
+      expect(updatedAllowance).toMatchObject(amount)
     })
     it('revokes USDT for Permit2', async () => {
-      await approval.setTokenAllowanceForPermit2({ owner, token }, 5)
+      await approval.setTokenAllowanceForPermit2({ owner, token }, amount)
       await approval.revokeTokenAllowanceForPermit2({ owner, token })
 
       const allowance = await approval.getTokenAllowanceForPermit2({ owner, token })
-      expect(allowance.toNumber()).toBe(0)
+      expect(allowance).toMatchObject(constants.Zero)
     })
   })
   describe('setPermit2Allowance', () => {
     it('permits Universal Router for USDT', async () => {
       const originalPermit = await approval.getPermit2Allowance({ owner, token })
-      expect(originalPermit.amount.toNumber()).toBe(0)
+      expect(originalPermit.amount).toMatchObject(constants.Zero)
       expect(originalPermit.expiration).toBe(0)
 
-      await approval.setPermit2Allowance({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
+      await approval.setPermit2Allowance({ owner, token }, { amount, expiration: 1000 })
 
       const updatedAllowance = await approval.getPermit2Allowance({ owner, token })
-      expect(updatedAllowance.amount.toNumber()).toBe(5)
+      expect(updatedAllowance.amount).toMatchObject(amount)
       expect(updatedAllowance.expiration).toBe(1000)
     })
     it("revokes Universal Router's permit for USDT", async () => {
-      await approval.setPermit2Allowance({ owner, token }, { amount: BigNumber.from(5), expiration: 1000 })
+      await approval.setPermit2Allowance({ owner, token }, { amount, expiration: 1000 })
       await approval.revokePermit2Allowance({ owner, token })
 
       const allowance = await approval.getPermit2Allowance({ owner, token })
 
-      expect(allowance.amount.toNumber()).toBe(0)
+      expect(allowance.amount).toMatchObject(constants.Zero)
       expect(allowance.expiration).toBeLessThan(Date.now() / 1000)
     })
   })
