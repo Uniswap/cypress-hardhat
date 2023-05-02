@@ -3,6 +3,7 @@
  * This is expected, and necessary in order collect coverage.
  */
 
+import { MaxUint160 } from '@uniswap/permit2-sdk'
 import { Token } from '@uniswap/sdk-core'
 import { BigNumber, constants } from 'ethers/lib/ethers'
 
@@ -45,6 +46,12 @@ describe('Approval', () => {
       const updatedAllowance = await approval.getTokenAllowance({ owner, token, spender })
       expect(updatedAllowance).toMatchObject(amount)
     })
+    it('approves max token allowance by default', async () => {
+      await approval.setTokenAllowance({ owner, token, spender })
+
+      const updatedAllowance = await approval.getTokenAllowance({ owner, token, spender })
+      expect(updatedAllowance).toMatchObject(constants.MaxUint256)
+    })
     it('revokes USDT', async () => {
       await approval.setTokenAllowance({ owner, token, spender }, amount)
       await approval.revokeTokenAllowance({ owner, token, spender })
@@ -82,6 +89,12 @@ describe('Approval', () => {
       const updatedAllowance = await approval.getPermit2Allowance({ owner, token })
       expect(updatedAllowance.amount).toMatchObject(amount)
       expect(updatedAllowance.expiration).toBe(1000)
+    })
+    it('permits max permit allowance by default', async () => {
+      await approval.setPermit2Allowance({ owner, token }, { expiration: 1000 })
+
+      const updatedAllowance = await approval.getPermit2Allowance({ owner, token })
+      expect(updatedAllowance.amount).toMatchObject(MaxUint160)
     })
     it("revokes Universal Router's permit for USDT", async () => {
       await approval.setPermit2Allowance({ owner, token }, { amount, expiration: 1000 })
