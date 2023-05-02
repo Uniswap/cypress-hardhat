@@ -1,7 +1,7 @@
 import { JsonRpcProvider } from '@ethersproject/providers'
-import { PERMIT2_ADDRESS } from '@uniswap/permit2-sdk'
+import { MaxUint160, MaxUint256, PERMIT2_ADDRESS } from '@uniswap/permit2-sdk'
 import { UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk'
-import { BigNumber } from 'ethers/lib/ethers'
+import { BigNumber, constants } from 'ethers/lib/ethers'
 
 import { AllowanceTransfer__factory, Erc20__factory, Permit2__factory } from '../types'
 import { ImpersonatedSigner } from './signer'
@@ -11,6 +11,7 @@ type ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender: Addr
 type Permit2ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender?: AddressLike }
 
 type Permit2Allowance = { amount: BigNumber; expiration: number }
+type Permit2AllowanceInput = Permit2Allowance & { amount?: BigNumber }
 
 function normalizeAddressLike(address: AddressLike): string {
   return typeof address === 'string' ? address : address.address
@@ -41,7 +42,7 @@ export class ApprovalUtils {
   }
 
   /** Sets the amount the spender is allowed by the owner to spend for the token. */
-  async setTokenAllowance(addresses: ApprovalAddresses, amount: number): Promise<void> {
+  async setTokenAllowance(addresses: ApprovalAddresses, amount: BigNumber): Promise<void> {
     const { owner, token, spender } = normalizeApprovalAddresses(addresses)
 
     const erc20 = Erc20__factory.connect(token, new ImpersonatedSigner(owner, this.provider))
@@ -50,7 +51,7 @@ export class ApprovalUtils {
 
   /** Sets the amount the spender is allowed by the owner to spend for the token to 0. */
   async revokeTokenAllowance(addresses: ApprovalAddresses): Promise<void> {
-    return this.setTokenAllowance(addresses, 0)
+    return this.setTokenAllowance(addresses, constants.Zero)
   }
 
   /** Returns the amount Permit2 is allowed by the owner to spend for the token. */
@@ -59,13 +60,13 @@ export class ApprovalUtils {
   }
 
   /** Sets the amount Permit2 is allowed by the owner to spend for the token. */
-  async setTokenAllowanceForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>, amount: number) {
+  async setTokenAllowanceForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>, amount: BigNumber = MaxUint256) {
     return this.setTokenAllowance({ ...addresses, spender: PERMIT2_ADDRESS }, amount)
   }
 
   /** Sets the amount Permit2 is allowed by the owner to spend for the token to 0. */
   async revokeTokenAllowanceForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>) {
-    return this.setTokenAllowanceForPermit2(addresses, 0)
+    return this.setTokenAllowanceForPermit2(addresses, constants.Zero)
   }
 
   /** Returns a spender's Permit2 allowance by the owner for the token. Spender is Universal Router by default. */
@@ -83,7 +84,7 @@ export class ApprovalUtils {
   /** Sets a spender's Permit2 allowance by the owner for the token. Spender is Universal Router by default. */
   async setPermit2Allowance(
     { owner, token, spender = this.universalRouterAddress }: Permit2ApprovalAddresses,
-    { amount, expiration }: Permit2Allowance
+    { expiration, amount = MaxUint160 }: Permit2AllowanceInput
   ): Promise<void> {
     const addresses = normalizeApprovalAddresses({ owner, token, spender })
 
@@ -97,6 +98,6 @@ export class ApprovalUtils {
 
   /** Sets a spender's Permit2 allowance by the owner for the token to 0. Spender is Universal Router by default. */
   async revokePermit2Allowance(addresses: Permit2ApprovalAddresses): Promise<void> {
-    return this.setPermit2Allowance(addresses, { amount: BigNumber.from(0), expiration: 0 })
+    return this.setPermit2Allowance(addresses, { amount: constants.Zero, expiration: 0 })
   }
 }
