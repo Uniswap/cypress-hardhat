@@ -3,7 +3,7 @@
  * This is expected, and necessary in order collect coverage.
  */
 
-import { MaxUint160 } from '@uniswap/permit2-sdk'
+import { MaxUint160, MaxUint256 } from '@uniswap/permit2-sdk'
 import { Token } from '@uniswap/sdk-core'
 import { constants } from 'ethers/lib/ethers'
 
@@ -69,6 +69,12 @@ describe('Approval', () => {
       const updatedAllowance = await approval.getTokenAllowanceForPermit2({ owner, token })
       expect(updatedAllowance.eq(5)).toBeTruthy()
     })
+    it('approves max token allowance by default', async () => {
+      await approval.setTokenAllowanceForPermit2({ owner, token })
+
+      const allowance = await approval.getTokenAllowanceForPermit2({ owner, token })
+      expect(allowance).toMatchObject(MaxUint256)
+    })
     it('revokes USDT for Permit2', async () => {
       await approval.setTokenAllowanceForPermit2({ owner, token }, 5)
       await approval.revokeTokenAllowanceForPermit2({ owner, token })
@@ -98,7 +104,21 @@ describe('Approval', () => {
       await approval.setPermit2Allowance({ owner, token }, { amount: 5 })
 
       const updatedAllowance = await approval.getPermit2Allowance({ owner, token })
-      expect(updatedAllowance.expiration).toBeLessThanOrEqual(Date.now() / 1000 + 2_592_000)
+      expect(updatedAllowance.expiration).toBeLessThanOrEqual(Math.floor(Date.now() / 1000) + 2_592_000)
+    })
+    it('permits default amount/expiration when no approval is passed', async () => {
+      await approval.setPermit2Allowance({ owner, token })
+
+      const updatedAllowance = await approval.getPermit2Allowance({ owner, token })
+      expect(updatedAllowance.expiration).toBeLessThanOrEqual(Math.floor(Date.now() / 1000) + 2_592_000)
+      expect(updatedAllowance.amount).toMatchObject(MaxUint160)
+    })
+    it('permits default amount/expiration when empty object is passed', async () => {
+      await approval.setPermit2Allowance({ owner, token }, {})
+
+      const updatedAllowance = await approval.getPermit2Allowance({ owner, token })
+      expect(updatedAllowance.expiration).toBeLessThanOrEqual(Math.floor(Date.now() / 1000) + 2_592_000)
+      expect(updatedAllowance.amount).toMatchObject(MaxUint160)
     })
     it("revokes Universal Router's permit for USDT", async () => {
       await approval.setPermit2Allowance({ owner, token }, { amount: 5, expiration: 1000 })

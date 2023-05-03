@@ -8,7 +8,7 @@ import { ImpersonatedSigner } from './signer'
 import { AddressLike } from './types'
 
 function get30DayExpiration(): number {
-  return Date.now() / 1000 + 2_592_000
+  return Math.floor(Date.now() / 1000) + 2_592_000
 }
 
 type ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender: AddressLike }
@@ -98,7 +98,7 @@ export class ApprovalUtils {
    * */
   async setPermit2Allowance(
     { owner, token, spender = this.universalRouterAddress }: Permit2ApprovalAddresses,
-    { amount = MaxUint160, expiration = get30DayExpiration() }: { amount?: BigNumberish; expiration?: number }
+    { amount = MaxUint160, expiration = get30DayExpiration() } = {} as { amount?: BigNumberish; expiration?: number }
   ): Promise<void> {
     const addresses = normalizeApprovalAddresses({ owner, token, spender })
 
