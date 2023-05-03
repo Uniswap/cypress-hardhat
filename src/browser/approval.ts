@@ -1,17 +1,23 @@
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { MaxUint160, MaxUint256, PERMIT2_ADDRESS } from '@uniswap/permit2-sdk'
 import { UNIVERSAL_ROUTER_ADDRESS } from '@uniswap/universal-router-sdk'
-import { BigNumber, BigNumberish, constants } from 'ethers/lib/ethers'
+import { BigNumber, BigNumberish } from 'ethers/lib/ethers'
 
 import { AllowanceTransfer__factory, Erc20__factory, Permit2__factory } from '../types'
 import { ImpersonatedSigner } from './signer'
 import { AddressLike } from './types'
 
+const THIRTY_DAYS_IN_SECONDS = 2_592_000
+/** Returns a timestamp representing 30 days from the current time */
+function get30DayExpiration(): number {
+  return Date.now() / 1000 + THIRTY_DAYS_IN_SECONDS
+}
+
 type ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender: AddressLike }
 type Permit2ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender?: AddressLike }
 
 type Permit2Allowance = { amount: BigNumber; expiration: number }
-type Permit2AllowanceInput = { amount?: BigNumberish; expiration: number }
+type Permit2AllowanceInput = { amount?: BigNumberish; expiration?: number }
 
 function normalizeAddressLike(address: AddressLike): string {
   return typeof address === 'string' ? address : address.address
@@ -41,7 +47,11 @@ export class ApprovalUtils {
     return await erc20.allowance(owner, spender)
   }
 
-  /** Sets the amount the spender is allowed by the owner to spend for the token. */
+  /**
+   * Sets the amount the spender is allowed by the owner to spend for the token.
+   *
+   * @param amount - number to set the allowance to (defaults to a max token approval of MaxUint256)
+   * */
   async setTokenAllowance(addresses: ApprovalAddresses, amount: BigNumberish = MaxUint256): Promise<void> {
     const { owner, token, spender } = normalizeApprovalAddresses(addresses)
 
@@ -51,7 +61,7 @@ export class ApprovalUtils {
 
   /** Sets the amount the spender is allowed by the owner to spend for the token to 0. */
   async revokeTokenAllowance(addresses: ApprovalAddresses): Promise<void> {
-    return this.setTokenAllowance(addresses, constants.Zero)
+    return this.setTokenAllowance(addresses, 0)
   }
 
   /** Returns the amount Permit2 is allowed by the owner to spend for the token. */
@@ -66,7 +76,7 @@ export class ApprovalUtils {
 
   /** Sets the amount Permit2 is allowed by the owner to spend for the token to 0. */
   async revokeTokenAllowanceForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>) {
-    return this.setTokenAllowanceForPermit2(addresses, constants.Zero)
+    return this.setTokenAllowanceForPermit2(addresses, 0)
   }
 
   /** Returns a spender's Permit2 allowance by the owner for the token. Spender is Universal Router by default. */
@@ -81,10 +91,15 @@ export class ApprovalUtils {
     return permit2.allowance(addresses.owner, addresses.token, addresses.spender)
   }
 
-  /** Sets a spender's Permit2 allowance by the owner for the token. Spender is Universal Router by default. */
+  /**
+   * Sets a spender's Permit2 allowance by the owner for the token.
+   *
+   * @param addresses - object containing the `owner`, `token`, and `spender` (`spender` defaults to the Universal Router)
+   * @param allowance - object containing the `amount` (defaults to a max permit approval of MaxUint160) and `expiration` (defaults to 30 days from the current time)
+   * */
   async setPermit2Allowance(
     { owner, token, spender = this.universalRouterAddress }: Permit2ApprovalAddresses,
-    { expiration, amount = MaxUint160 }: Permit2AllowanceInput
+    { amount = MaxUint160, expiration = get30DayExpiration() }: Permit2AllowanceInput
   ): Promise<void> {
     const addresses = normalizeApprovalAddresses({ owner, token, spender })
 
@@ -98,6 +113,6 @@ export class ApprovalUtils {
 
   /** Sets a spender's Permit2 allowance by the owner for the token to 0. Spender is Universal Router by default. */
   async revokePermit2Allowance(addresses: Permit2ApprovalAddresses): Promise<void> {
-    return this.setPermit2Allowance(addresses, { amount: constants.Zero, expiration: 0 })
+    return this.setPermit2Allowance(addresses, { amount: 0, expiration: 0 })
   }
 }
