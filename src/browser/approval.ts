@@ -14,9 +14,6 @@ function get30DayExpiration(): number {
 type ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender: AddressLike }
 type Permit2ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender?: AddressLike }
 
-type Permit2Allowance = { amount: BigNumber; expiration: number }
-type Permit2AllowanceInput = { amount?: BigNumberish; expiration?: number }
-
 function normalizeAddressLike(address: AddressLike): string {
   return typeof address === 'string' ? address : address.address
 }
@@ -86,7 +83,7 @@ export class ApprovalUtils {
     owner,
     token,
     spender = this.universalRouterAddress,
-  }: Permit2ApprovalAddresses): Promise<Permit2Allowance> {
+  }: Permit2ApprovalAddresses): Promise<{ amount: BigNumber; expiration: number }> {
     const addresses = normalizeApprovalAddresses({ owner, token, spender })
 
     const permit2 = Permit2__factory.connect(PERMIT2_ADDRESS, this.provider)
@@ -101,7 +98,7 @@ export class ApprovalUtils {
    * */
   async setPermit2Allowance(
     { owner, token, spender = this.universalRouterAddress }: Permit2ApprovalAddresses,
-    { amount = MaxUint160, expiration = get30DayExpiration() }: Permit2AllowanceInput
+    { amount = MaxUint160, expiration = get30DayExpiration() }: { amount?: BigNumberish; expiration?: number }
   ): Promise<void> {
     const addresses = normalizeApprovalAddresses({ owner, token, spender })
 
