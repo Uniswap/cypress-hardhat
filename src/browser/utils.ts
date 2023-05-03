@@ -166,15 +166,6 @@ export class Utils {
     const { timestamp } = await this.send('eth_getBlockByNumber', ['latest', false])
     await this.send('evm_setNextBlockTimestamp', [hexValue(Number(timestamp) + blockInterval)])
     await this.send('hardhat_mine', [hexValue(count), hexValue(blockInterval)])
-    // Immediately update providers with the newly mined state.
-    await Promise.all(
-      this.providers.map(async (provider) => {
-        // Update the block number. poll() is debounced, but getBlockNumber() is not.
-        await provider.getBlockNumber()
-        // Emit the new block number. Only poll will emit a 'block' event.
-        await provider.poll()
-      })
-    )
   }
 
   /** Sends a JSON-RPC directly to hardhat. */

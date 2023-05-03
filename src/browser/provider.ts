@@ -1,6 +1,7 @@
 import { StaticJsonRpcProvider } from '@ethersproject/providers'
 
 export class HardhatProvider extends StaticJsonRpcProvider {
+  /** Resets internal state so that the block number may be "rewinded". */
   async reset() {
     // Reset all internal block number guards and caches.
     // See https://github.com/ethers-io/ethers.js/blob/v5/packages/providers/src.ts/base-provider.ts#L1168-L1175.
