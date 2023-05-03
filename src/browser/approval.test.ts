@@ -94,6 +94,12 @@ describe('Approval', () => {
       const updatedAllowance = await approval.getPermit2Allowance({ owner, token })
       expect(updatedAllowance.amount).toMatchObject(MaxUint160)
     })
+    it('permits with a 30 day expiration by default', async () => {
+      await approval.setPermit2Allowance({ owner, token }, { amount: 5 })
+
+      const updatedAllowance = await approval.getPermit2Allowance({ owner, token })
+      expect(updatedAllowance.expiration).toBeLessThanOrEqual(Date.now() / 1000 + 2_592_000)
+    })
     it("revokes Universal Router's permit for USDT", async () => {
       await approval.setPermit2Allowance({ owner, token }, { amount: 5, expiration: 1000 })
       await approval.revokePermit2Allowance({ owner, token })

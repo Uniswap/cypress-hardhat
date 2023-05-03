@@ -7,10 +7,8 @@ import { AllowanceTransfer__factory, Erc20__factory, Permit2__factory } from '..
 import { ImpersonatedSigner } from './signer'
 import { AddressLike } from './types'
 
-const THIRTY_DAYS_IN_SECONDS = 2_592_000
-/** Returns a timestamp representing 30 days from the current time */
 function get30DayExpiration(): number {
-  return Date.now() / 1000 + THIRTY_DAYS_IN_SECONDS
+  return Date.now() / 1000 + 2_592_000
 }
 
 type ApprovalAddresses = { owner: AddressLike; token: AddressLike; spender: AddressLike }
@@ -69,8 +67,12 @@ export class ApprovalUtils {
     return await this.getTokenAllowance({ ...addresses, spender: PERMIT2_ADDRESS })
   }
 
-  /** Sets the amount Permit2 is allowed by the owner to spend for the token. */
-  async setTokenAllowanceForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>, amount?: BigNumberish) {
+  /**
+   * Sets the amount Permit2 is allowed by the owner to spend for the token.
+   *
+   * @param amount - number to set the allowance to (defaults to a max token approval of MaxUint256)
+   * */
+  async setTokenAllowanceForPermit2(addresses: Omit<ApprovalAddresses, 'spender'>, amount: BigNumberish = MaxUint256) {
     return this.setTokenAllowance({ ...addresses, spender: PERMIT2_ADDRESS }, amount)
   }
 
