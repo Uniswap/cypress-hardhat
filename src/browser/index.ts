@@ -2,11 +2,15 @@ import { Network } from '../types/Network'
 import { Eip1193 } from './eip1193'
 import { Utils } from './utils'
 
+interface HardhatOptions {
+  automine?: boolean
+}
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
     interface Chainable {
-      hardhat(): Chainable<Utils>
+      hardhat(options?: HardhatOptions): Chainable<Utils>
       provider(): Chainable<Eip1193>
       task(event: 'hardhat'): Chainable<Network>
     }
@@ -14,12 +18,13 @@ declare global {
 }
 
 let hardhat: Utils
-Cypress.Commands.add('hardhat', () => {
-  if (hardhat) return cy.wrap(hardhat)
-
-  return cy.task('hardhat').then((env) => {
-    return (hardhat = new Utils(env))
-  })
+Cypress.Commands.add('hardhat', (options?: HardhatOptions) => {
+  return (hardhat ? cy.wrap(hardhat) : cy.task('hardhat').then((env) => (hardhat = new Utils(env)))).then(
+    async (utils) => {
+      if (options?.automine !== undefined) await utils.setAutomine(options.automine)
+      return utils
+    }
+  )
 })
 
 let provider: Eip1193
