@@ -1,3 +1,5 @@
+import { SupportedChainId } from '@uniswap/sdk-core'
+
 import { Network } from '../types/Network'
 import setup from './setup'
 
@@ -11,11 +13,10 @@ export async function setupHardhatEvents(on: Cypress.PluginEvents, config: Cypre
   on('task', {
     hardhat: (): Network => ({
       url: env.url,
-      chainId: env.chainId,
       accounts: env.accounts,
     }),
-    ['hardhat:reset']: () => env.reset(),
+    ['hardhat:reset']: (chainId?: number) => env.reset(chainId),
   })
-  on('before:spec', () => env.reset())
+  on('before:spec', () => env.reset(SupportedChainId.MAINNET))
   on('after:run', () => env.close())
 }

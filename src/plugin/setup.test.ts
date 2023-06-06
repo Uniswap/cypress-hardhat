@@ -3,6 +3,7 @@
  * This is expected, and necessary in order collect coverage.
  */
 
+import { SupportedChainId } from '@uniswap/sdk-core'
 import { resetHardhatContext } from 'hardhat/plugins-testing'
 import { HardhatNetworkHDAccountsConfig, HardhatRuntimeEnvironment } from 'hardhat/types'
 
@@ -34,7 +35,6 @@ describe('setup', () => {
       env = await setup()
       expect(env).toMatchObject({
         url: 'http://127.0.0.1:8545',
-        chainId: 1,
         accounts: [
           {
             address: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
@@ -46,6 +46,7 @@ describe('setup', () => {
           },
         ],
       })
+      await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x1')
     })
 
     it('resets the environment', async () => {
@@ -65,8 +66,19 @@ describe('setup', () => {
           }),
         },
       ])
+      await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x1')
       await expect(hre.network.provider.send('eth_blockNumber', [])).resolves.toBe(blockNumber)
       await expect(hre.network.provider.send('hardhat_getAutomine', [])).resolves.toBe(true)
+    })
+
+    it('resets the environment with another chainId', async () => {
+      env = await setup()
+      hre.network.provider.send('evm_setAutomine', [false])
+
+      await expect(env.reset(SupportedChainId.OPTIMISM)).rejects.toThrow('No fork configured for chainId(10)')
+
+      await env.reset(SupportedChainId.POLYGON)
+      await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x89')
     })
 
     describe('accounts', () => {

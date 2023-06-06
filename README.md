@@ -23,7 +23,30 @@ You'll need to [configure mainnet forking](https://hardhat.org/hardhat-network/g
 
 NOTE: You should set the [`accounts` field](https://hardhat.org/hardhat-network/reference#accounts) to include as few accounts as possible to reduce startup time for your tests' hardhat network.
 
-Then, install the plugin in your cypress configuration (see the [cypress documentation](https://docs.cypress.io/guides/tooling/plugins-guide#Using-a-plugin) for details):
+`cypress-hardhat` is also able to respond to `wallet_switchEthereumChain` requests to help test EIP-3326, if configured. To configure this behavior, add a `forks` field to your `hardhat.config.js` with the chains you are going to switch to:
+
+```
+const forks = {
+  [1]: {
+    url: `${process.env.JSON_RPC_PROVIDER}`,
+    blockNumber: 17023328,
+    httpHeaders: {},
+  },
+  [137]: {
+    url: `${process.env.POLYGON_JSON_RPC_PROVIDER}`,
+    blockNumber: 43600000,
+    httpHeaders: {},
+  },
+}
+
+module.exports = {
+  forks,
+  networks: {...},
+  ...
+}
+```
+
+Finally, install the plugin in your cypress configuration (see the [cypress documentation](https://docs.cypress.io/guides/tooling/plugins-guide#Using-a-plugin) for details):
 
 ```
 import { setupHardhatEvents } from 'cypress-hardhat'

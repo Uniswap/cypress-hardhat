@@ -4,7 +4,7 @@
  */
 
 import { Wallet } from '@ethersproject/wallet'
-import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
+import { CurrencyAmount, Ether, SupportedChainId, Token } from '@uniswap/sdk-core'
 
 import setup from '../plugin/setup'
 import { Network } from '../types/Network'
@@ -37,7 +37,12 @@ describe('Utils', () => {
 
     it('invokes hardhat:reset', () => {
       utils.reset()
-      expect(cy.task).toHaveBeenCalledWith('hardhat:reset')
+      expect(cy.task).toHaveBeenCalledWith('hardhat:reset', undefined)
+    })
+
+    it('invokes hardhat:reset with passed chainId', () => {
+      utils.reset(SupportedChainId.POLYGON)
+      expect(cy.task).toHaveBeenCalledWith('hardhat:reset', SupportedChainId.POLYGON)
     })
 
     it('resets the providers', async () => {
@@ -59,7 +64,6 @@ describe('Utils', () => {
         accounts: expect.arrayContaining([
           expect.objectContaining({ address: expect.any(String), privateKey: expect.any(String) }),
         ]),
-        chainId: 1,
         url: 'http://127.0.0.1:8545',
       })
     })
