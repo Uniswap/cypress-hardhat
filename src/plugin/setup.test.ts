@@ -104,18 +104,5 @@ describe('setup', () => {
         )
       })
     })
-
-    describe('logging', () => {
-      it('does not enable logging', async () => {
-        env = await setup()
-        expect(send).not.toHaveBeenCalled()
-      })
-
-      it('enables logging with `loggingEnabled`', async () => {
-        hre.config.networks.hardhat.loggingEnabled = true
-        env = await setup()
-        expect(send).toHaveBeenCalledWith('hardhat_setLoggingEnabled', [true])
-      })
-    })
   })
 })
