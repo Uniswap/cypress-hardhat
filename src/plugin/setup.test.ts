@@ -3,6 +3,7 @@
  * This is expected, and necessary in order collect coverage.
  */
 
+import { hexlify } from '@ethersproject/bytes'
 import { SupportedChainId } from '@uniswap/sdk-core'
 import { resetHardhatContext } from 'hardhat/plugins-testing'
 import { HardhatNetworkHDAccountsConfig, HardhatRuntimeEnvironment } from 'hardhat/types'
@@ -73,12 +74,72 @@ describe('setup', () => {
 
     it('resets the environment with another chainId', async () => {
       env = await setup()
-      hre.network.provider.send('evm_setAutomine', [false])
 
-      await expect(env.reset(SupportedChainId.OPTIMISM)).rejects.toThrow('No fork configured for chainId(10)')
+      await expect(env.reset(SupportedChainId.OPTIMISM)).rejects.toThrow('No fork configured for chainId(0x0a)')
 
       await env.reset(SupportedChainId.POLYGON)
       await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x89')
+
+      await env.reset(SupportedChainId.MAINNET)
+      await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x1')
+    })
+
+    describe('provider', () => {
+      it('delegates calls', async () => {
+        env = await setup()
+        const request = await fetch(env.url, {
+          method: 'POST',
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'eth_chainId',
+            params: [],
+            id: 1,
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        await expect(request.json()).resolves.toEqual(expect.objectContaining({ result: '0x1' }))
+      })
+
+      describe('EIP-3326', () => {
+        it('polyfills wallet_switchEthereumChain', async () => {
+          env = await setup()
+
+          const optimismRequest = await fetch(env.url, {
+            method: 'POST',
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: hexlify(SupportedChainId.OPTIMISM) }],
+              id: 1,
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+          await expect(optimismRequest.json()).resolves.toEqual(
+            expect.objectContaining({
+              error: expect.objectContaining({ message: 'Error: No fork configured for chainId(0x0a)' }),
+            })
+          )
+
+          const polygonRequest = await fetch(env.url, {
+            method: 'POST',
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: hexlify(SupportedChainId.POLYGON) }],
+              id: 1,
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+          await expect(polygonRequest.json()).resolves.toEqual(expect.objectContaining({ result: null }))
+          await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x89')
+        })
+      })
     })
 
     describe('accounts', () => {

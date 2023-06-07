@@ -1,11 +1,13 @@
 import '../types/hardhat.config'
 
+import http from 'node:http'
+
+import { hexlify } from '@ethersproject/bytes'
 import hre from 'hardhat'
 import { TASK_NODE, TASK_NODE_GET_PROVIDER, TASK_NODE_SERVER_READY } from 'hardhat/builtin-tasks/task-names'
 import { extendConfig } from 'hardhat/config'
 import { createProvider } from 'hardhat/internal/core/providers/construction'
 import { EthereumProvider, HardhatNetworkAccountsConfig } from 'hardhat/types'
-import http from 'http'
 
 import { Network } from '../types/Network'
 import { toExternallyOwnedAccounts } from './accounts'
@@ -59,24 +61,23 @@ export default async function setup(): Promise<
   }
 
   async function reset(chainId?: number) {
-    const targetChainId = chainId ?? defaultChainId
     const forkConfig = chainId ? forkConfigs[chainId] : defaultForking
-    if (!forkConfig) throw new Error(`No fork configured for chainId(${chainId})`)
+    chainId = chainId ?? defaultChainId
+    if (!forkConfig) throw new Error(`No fork configured for chainId(${hexlify(chainId)})`)
 
     // Switching chains requires that the node be restarted.
     // See https://github.com/NomicFoundation/hardhat/issues/3074.
-    if (hre.network.config.chainId !== targetChainId) {
-      hre.config.networks.hardhat.chainId = targetChainId
+    if (hre.network.config.chainId !== chainId) {
+      hre.config.networks.hardhat.chainId = chainId
       hre.config.networks.hardhat.forking = { enabled: true, ...forkConfig }
 
       // Re-defines the network provider, which actually runs the hardhat note. Hardhat does not allow this to be
       // re-initialized, so it will be stuck on defaultChainId otherwise. This is brittle because it requires using
       // the internal createProvider method, but it is the only way to switch chains at runtime.
       hre.network.provider =
-        chainServers[targetChainId]?.provider ??
-        createProvider('hardhat', hardhatConfig, hre.config.paths, hre.artifacts)
+        chainServers[chainId]?.provider ?? createProvider('hardhat', hardhatConfig, hre.config.paths, hre.artifacts)
 
-      server = await runChainServer(targetChainId)
+      server = await runChainServer(chainId)
     } else {
       return hre.network.provider.send('hardhat_reset', [
         {
@@ -101,7 +102,9 @@ export default async function setup(): Promise<
       // Handle wallet_switchEthereumChain requests.
       if (method === 'wallet_switchEthereumChain') {
         const [{ chainId }] = params as [{ chainId: string }]
-        console.debug(`Switching to chainId(${chainId})`)
+        if (hardhatConfig.loggingEnabled) {
+          console.debug(`Switching to chainId(${chainId})`)
+        }
         await reset(Number(chainId))
         return null
       }
@@ -112,20 +115,19 @@ export default async function setup(): Promise<
   })
 
   // Initializes the servers.
-  const forwardingServer = http
-    .createServer((req, res) => {
-      // Forward responses to the active server.
-      req.pipe(
-        http.request({ ...req, port: server.port }, (response) => {
-          for (const header in response.headers) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            res.setHeader(header, response.headers[header]!)
-          }
-          response.pipe(res)
-        })
-      )
-    })
-    .listen(PORT)
+  const forwardingServer = http.createServer((req, res) => {
+    // Forward responses to the active server.
+    req.pipe(
+      http.request({ ...req, hostname: server.address, port: server.port }, (response) => {
+        for (const header in response.headers) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          res.setHeader(header, response.headers[header]!)
+        }
+        response.pipe(res)
+      })
+    )
+  })
+  const listen = new Promise<void>((resolve) => forwardingServer.listen(PORT, resolve))
   const run = runChainServer(defaultChainId)
 
   // Deriving ExternallyOwnedAccounts is computationally intensive, so we do it while waiting for the server to come up.
@@ -134,7 +136,7 @@ export default async function setup(): Promise<
     process.stderr.write(`${accounts.length} hardhat accounts specified - consider specifying fewer.\n`)
     process.stderr.write('Specifying multiple hardhat accounts will noticeably slow your test startup time.\n\n')
   }
-  let server = await run
+  let [server] = await Promise.all([run, listen])
 
   return {
     url: 'http://' + server.address + ':' + PORT,
