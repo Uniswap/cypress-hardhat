@@ -7,12 +7,12 @@ const forks = {
   [SupportedChainId.MAINNET]: {
     url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
     blockNumber: 17023328,
-    httpHeaders: {},
+    httpHeaders: { Origin: 'localhost:3000' },
   },
   [SupportedChainId.POLYGON]: {
     url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
     blockNumber: 43600000,
-    httpHeaders: {},
+    httpHeaders: { Origin: 'localhost:3000' },
   },
 }
 
