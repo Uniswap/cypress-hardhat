@@ -26,8 +26,8 @@ Cypress.Commands.overwrite(
       originalFn({
         ...options,
         url,
-        onBeforeLoad(win) {
-          options.onBeforeLoad?.(win)
+        onBeforeLoad(window) {
+          options.onBeforeLoad?.(window)
           window.ethereum = provider
         },
       })

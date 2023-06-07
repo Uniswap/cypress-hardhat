@@ -8,6 +8,7 @@ import { CurrencyAmount, Ether, SupportedChainId, Token } from '@uniswap/sdk-cor
 
 import setup from '../plugin/setup'
 import { Network } from '../types/Network'
+import { HardhatProvider } from './provider'
 import { Utils } from './utils'
 
 const CHAIN_ID = 1
@@ -50,6 +51,14 @@ describe('Utils', () => {
       await utils.mine(100)
       await new Promise<void>((resolve) => {
         utils.reset().then(async () => {
+          const cachedNetworks = utils.providers.map((provider) => (provider as HardhatProvider).cachedNetwork)
+          expect(cachedNetworks).toEqual(Array(initialBlockNumbers.length).fill(null))
+
+          const networks = await Promise.all(utils.providers.map((provider) => provider.getNetwork()))
+          expect(networks).toEqual(
+            Array(initialBlockNumbers.length).fill(expect.objectContaining({ chainId: CHAIN_ID }))
+          )
+
           const blockNumbers = await Promise.all(utils.providers.map((provider) => provider.getBlockNumber()))
           expect(blockNumbers).toEqual(initialBlockNumbers)
           resolve()

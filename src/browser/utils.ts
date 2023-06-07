@@ -45,8 +45,8 @@ export class Utils {
     return (
       cy
         .task('hardhat:reset', chainId)
-        // Providers will not "rewind" to an older block number, so they must be reset.
-        .then(() => Promise.all(this.providers.map((provider) => (provider as HardhatProvider).reset())))
+        // Providers will not "rewind" to an older block number nor notice chain changes, so they must be reset.
+        .then(() => this.providers.map((provider) => (provider as HardhatProvider).reset()))
     )
   }
 
