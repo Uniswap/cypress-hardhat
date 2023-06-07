@@ -10,7 +10,7 @@ export class HardhatProvider extends JsonRpcProvider {
 
   /** Resets internal state so that the block number may be "rewinded" and chain changes will be noted. */
   reset() {
-    // Reset all internal block number guards and caches.
+    // Resets all internal block number guards and caches.
     // See https://github.com/ethers-io/ethers.js/blob/v5/packages/providers/src.ts/base-provider.ts#L1168-L1175.
     this._lastBlockNumber = -2
     this._fastBlockNumber = null as unknown as typeof this._fastBlockNumber
@@ -20,7 +20,7 @@ export class HardhatProvider extends JsonRpcProvider {
     this._maxInternalBlockNumber = -1024
     this._internalBlockNumber = null as unknown as typeof this._internalBlockNumber
 
-    // Reset the network cache.
+    // Resets the network cache.
     this.cachedNetwork = null
   }
 

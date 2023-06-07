@@ -10,30 +10,31 @@ import http from 'http'
 import { Network } from '../types/Network'
 import { toExternallyOwnedAccounts } from './accounts'
 
+const PORT = 8545
+
 extendConfig((config, userConfig) => {
   /* istanbul ignore next */
   config.forks = userConfig.forks || {}
 })
 
-type Server = { address: string; port: number; close: () => Promise<void>; provider: EthereumProvider }
+type ChainServer = { address: string; port: number; close: () => Promise<void>; provider: EthereumProvider }
+const chainServers: ChainServer[] = []
 
-const servers: Server[] = []
+/**
+ * Initializes a chain server.
+ * The provider *must* be configured for the chainId before calling runChainServer.
+ */
+function runChainServer(chainId: number): Promise<ChainServer> {
+  if (chainServers[chainId]) return Promise.resolve(chainServers[chainId])
 
-function url(address: string, port: number) {
-  return 'http://' + address + ':' + port
-}
-
-function runServer(chainId: number): Promise<Server> {
-  if (servers[chainId]) return Promise.resolve(servers[chainId])
-
-  const run = hre.run(TASK_NODE, { port: 8545 + chainId })
+  const run = hre.run(TASK_NODE, { port: PORT + chainId })
   return new Promise((resolve) =>
     hre.tasks[TASK_NODE_SERVER_READY].setAction(async ({ address, port, provider, server }) => {
       const close = async () => {
         await Promise.all([server.close(), run])
       }
-      servers[chainId] = { address, port, close, provider }
-      resolve(servers[chainId])
+      chainServers[chainId] = { address, port, close, provider }
+      resolve(chainServers[chainId])
     })
   )
 }
@@ -72,9 +73,10 @@ export default async function setup(): Promise<
       // re-initialized, so it will be stuck on defaultChainId otherwise. This is brittle because it requires using
       // the internal createProvider method, but it is the only way to switch chains at runtime.
       hre.network.provider =
-        servers[targetChainId]?.provider ?? createProvider('hardhat', hardhatConfig, hre.config.paths, hre.artifacts)
+        chainServers[targetChainId]?.provider ??
+        createProvider('hardhat', hardhatConfig, hre.config.paths, hre.artifacts)
 
-      server = await runServer(targetChainId)
+      server = await runChainServer(targetChainId)
     } else {
       return hre.network.provider.send('hardhat_reset', [
         {
@@ -89,42 +91,29 @@ export default async function setup(): Promise<
     }
   }
 
-  // Overrides the GET_PROVIDER task to avoid unnecessary time-intensive evm calls.
   hre.tasks[TASK_NODE_GET_PROVIDER].setAction(async () => {
+    // Use hre.network.provider to avoid unnecessary time-intensive evm calls.
     const provider = hre.network.provider
     const request = provider.request
     provider.request = async (...args) => {
       const [{ method, params }] = args
+
+      // Handle wallet_switchEthereumChain requests.
       if (method === 'wallet_switchEthereumChain') {
         const [{ chainId }] = params as [{ chainId: string }]
-        console.debug(`Switching to chainId(${Number(chainId)})`)
+        console.debug(`Switching to chainId(${chainId})`)
         await reset(Number(chainId))
         return null
       }
+
       return request.call(provider, ...args)
     }
     return provider
   })
 
-  // Initializes the server.
-  const run = runServer(defaultChainId)
-
-  // Deriving ExternallyOwnedAccounts is computationally intensive, so we do it while waiting for the server to come up.
-  const accounts = toExternallyOwnedAccounts(hre.network.config.accounts as HardhatNetworkAccountsConfig)
-  if (accounts.length > 4) {
-    process.stderr.write(`${accounts.length} hardhat accounts specified - consider specifying fewer.\n`)
-    process.stderr.write('Specifying multiple hardhat accounts will noticeably slow your test startup time.\n\n')
-  }
-
-  // Enables logging if it was enabled in the hardhat config.
-  if (hre.config.networks.hardhat.loggingEnabled) {
-    await hre.network.provider.send('hardhat_setLoggingEnabled', [true])
-  }
-
-  let server = await run
+  // Initializes the servers.
   const forwardingServer = http
     .createServer((req, res) => {
-      console.debug(`Forwarding ${req.method} ${req.url} to chainId(${server.port - 8545})`)
       // Forward responses to the active server.
       req.pipe(
         http.request({ ...req, port: server.port }, (response) => {
@@ -136,15 +125,25 @@ export default async function setup(): Promise<
         })
       )
     })
-    .listen(8545)
+    .listen(PORT)
+  const run = runChainServer(defaultChainId)
+
+  // Deriving ExternallyOwnedAccounts is computationally intensive, so we do it while waiting for the server to come up.
+  const accounts = toExternallyOwnedAccounts(hre.network.config.accounts as HardhatNetworkAccountsConfig)
+  if (accounts.length > 4) {
+    process.stderr.write(`${accounts.length} hardhat accounts specified - consider specifying fewer.\n`)
+    process.stderr.write('Specifying multiple hardhat accounts will noticeably slow your test startup time.\n\n')
+  }
+  let server = await run
+
   return {
-    url: url(server.address, 8545),
+    url: 'http://' + server.address + ':' + PORT,
     accounts,
     reset,
     close: async () => {
       await Promise.all([
         new Promise((resolve) => forwardingServer.close(resolve)),
-        ...servers.map((server) => server.close()),
+        ...chainServers.map((server) => server.close()),
       ])
     },
   }
