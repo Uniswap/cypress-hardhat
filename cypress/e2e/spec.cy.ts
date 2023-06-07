@@ -36,7 +36,7 @@ describe('cypress-hardhat', () => {
       .should('be.instanceOf', Array)
   })
 
-  it.only('switches chains', () => {
+  it('switches chains', () => {
     cy.visit('https://example.com')
       .then((window) => window.ethereum.send('eth_chainId'))
       .should('equal', '0x1')

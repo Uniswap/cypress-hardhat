@@ -1,6 +1,7 @@
 import { Eip1193Bridge } from '@ethersproject/experimental/lib/eip1193-bridge'
 import { JsonRpcProvider } from '@ethersproject/providers'
 
+import { HardhatProvider } from './provider'
 import { Utils } from './utils'
 
 export class Eip1193 extends Eip1193Bridge {
@@ -56,12 +57,9 @@ export class Eip1193 extends Eip1193Bridge {
           break
         }
         case 'wallet_switchEthereumChain':
-          // This switches to a new fork. In doing so, it also wipes the state of the current fork. This is irreversible
-          // but is considered ok because this is a test environment.
-          //
-          // this.utils.reset returns a Chainable so it cannot be awaited, as nested Chainables will never resolve. This
-          // is ok as long as it is done in an independent Cypress command, as Cypress will delay any further commands.
-          this.utils.reset(Number(params[0].chainId))
+          await super.send(method, params)
+          // Providers will not "rewind" to an older block number nor notice chain changes, so they must be reset.
+          this.utils.providers.forEach((provider) => (provider as HardhatProvider).reset())
           break
         default:
           result = await super.send(method, params)
