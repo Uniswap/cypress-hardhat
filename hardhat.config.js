@@ -5,12 +5,12 @@ require('dotenv').config()
 
 const forks = {
   [SupportedChainId.MAINNET]: {
-    url: `${process.env.JSON_RPC_PROVIDER}`,
+    url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
     blockNumber: 17023328,
     httpHeaders: {},
   },
   [SupportedChainId.POLYGON]: {
-    url: `${process.env.POLYGON_JSON_RPC_PROVIDER}`,
+    url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
     blockNumber: 43600000,
     httpHeaders: {},
   },

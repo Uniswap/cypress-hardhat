@@ -33,7 +33,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn test
         env:
-          JSON_RPC_PROVIDER: ${{ secrets.JSON_RPC_PROVIDER }}
+          INFURA_KEY: ${{ secrets.INFURA_KEY }}
 
   cypress-test:
     runs-on: ubuntu-latest
@@ -43,4 +43,4 @@ jobs:
         with:
           browser: chrome
         env:
-          JSON_RPC_PROVIDER: ${{ secrets.JSON_RPC_PROVIDER }}
+          INFURA_KEY: ${{ secrets.INFURA_KEY }}
