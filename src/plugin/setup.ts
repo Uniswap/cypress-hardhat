@@ -102,6 +102,7 @@ export default async function setup(): Promise<
       // Handle wallet_switchEthereumChain requests.
       if (method === 'wallet_switchEthereumChain') {
         const [{ chainId }] = params as [{ chainId: string }]
+        /* istanbul ignore next */
         if (hardhatConfig.loggingEnabled) {
           console.debug(`Switching to chainId(${chainId})`)
         }
