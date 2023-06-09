@@ -8,7 +8,6 @@ import { CurrencyAmount, Ether, SupportedChainId, Token } from '@uniswap/sdk-cor
 
 import setup from '../plugin/setup'
 import { Network } from '../types/Network'
-import { HardhatProvider } from './provider'
 import { Utils } from './utils'
 
 const CHAIN_ID = 1
@@ -46,23 +45,29 @@ describe('Utils', () => {
       expect(cy.task).toHaveBeenCalledWith('hardhat:reset', SupportedChainId.POLYGON)
     })
 
-    it('resets the providers', async () => {
+    it('resets the provider blockNumber', async () => {
       const initialBlockNumbers = await Promise.all(utils.providers.map((provider) => provider.getBlockNumber()))
       await utils.mine(100)
+      const blockNumbers = await Promise.all(utils.providers.map((provider) => provider.getBlockNumber()))
+      blockNumbers.forEach((blockNumber) => expect(blockNumber).toBe(initialBlockNumbers[0] + 100))
       await new Promise<void>((resolve) => {
         utils.reset().then(async () => {
-          const cachedNetworks = utils.providers.map((provider) => (provider as HardhatProvider).cachedNetwork)
-          expect(cachedNetworks).toEqual(Array(initialBlockNumbers.length).fill(null))
-
-          const networks = await Promise.all(utils.providers.map((provider) => provider.getNetwork()))
-          expect(networks).toEqual(
-            Array(initialBlockNumbers.length).fill(expect.objectContaining({ chainId: CHAIN_ID }))
-          )
-
           const blockNumbers = await Promise.all(utils.providers.map((provider) => provider.getBlockNumber()))
           expect(blockNumbers).toEqual(initialBlockNumbers)
           resolve()
         })
+      })
+    })
+
+    it('resets the provider chainId', async () => {
+      const networks = await Promise.all(utils.providers.map((provider) => provider.getNetwork()))
+      networks.forEach((network) => expect(network.chainId).toBe(CHAIN_ID))
+      await new Promise<void>((resolve) => {
+        utils.reset(SupportedChainId.POLYGON).then(async () => {
+          const networks = await Promise.all(utils.providers.map((provider) => provider.getNetwork()))
+          networks.forEach((network) => expect(network.chainId).toBe(CHAIN_ID))
+        })
+        resolve()
       })
     })
   })
