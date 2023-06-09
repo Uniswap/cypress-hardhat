@@ -72,8 +72,9 @@ export default async function setup(): Promise<
       hre.config.networks.hardhat.forking = { enabled: true, ...forkConfig }
 
       // Re-defines the network provider, which actually runs the hardhat note. Hardhat does not allow this to be
-      // re-initialized, so it will be stuck on defaultChainId otherwise. This is brittle because it requires using
-      // the internal createProvider method, but it is the only way to switch chains at runtime.
+      // re-initialized, so it will be stuck on defaultChainId otherwise.
+      // This is brittle because it requires using the internal createProvider method, which may not be stable;
+      // but it is the only way to run a new chain at runtime.
       hre.network.provider =
         chainServers[chainId]?.provider ?? createProvider('hardhat', hardhatConfig, hre.config.paths, hre.artifacts)
 
@@ -93,8 +94,9 @@ export default async function setup(): Promise<
   }
 
   hre.tasks[TASK_NODE_GET_PROVIDER].setAction(async () => {
-    // Use hre.network.provider to avoid unnecessary time-intensive evm calls.
+    // Use the network provider, which was redefined as part of reset(chainId).
     const provider = hre.network.provider
+
     const request = provider.request
     provider.request = async (...args) => {
       const [{ method, params }] = args
