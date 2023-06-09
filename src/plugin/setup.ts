@@ -14,8 +14,8 @@ import { toExternallyOwnedAccounts } from './accounts'
 
 const PORT = 8545
 
+/* istanbul ignore next */
 extendConfig((config, userConfig) => {
-  /* istanbul ignore next */
   config.forks = userConfig.forks || {}
 })
 
