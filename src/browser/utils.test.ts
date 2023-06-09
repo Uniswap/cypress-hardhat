@@ -4,7 +4,7 @@
  */
 
 import { Wallet } from '@ethersproject/wallet'
-import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
+import { CurrencyAmount, Ether, SupportedChainId, Token } from '@uniswap/sdk-core'
 
 import setup from '../plugin/setup'
 import { Network } from '../types/Network'
@@ -37,18 +37,37 @@ describe('Utils', () => {
 
     it('invokes hardhat:reset', () => {
       utils.reset()
-      expect(cy.task).toHaveBeenCalledWith('hardhat:reset')
+      expect(cy.task).toHaveBeenCalledWith('hardhat:reset', undefined)
     })
 
-    it('resets the providers', async () => {
+    it('invokes hardhat:reset with passed chainId', () => {
+      utils.reset(SupportedChainId.POLYGON)
+      expect(cy.task).toHaveBeenCalledWith('hardhat:reset', SupportedChainId.POLYGON)
+    })
+
+    it('resets the provider blockNumber', async () => {
       const initialBlockNumbers = await Promise.all(utils.providers.map((provider) => provider.getBlockNumber()))
       await utils.mine(100)
+      const blockNumbers = await Promise.all(utils.providers.map((provider) => provider.getBlockNumber()))
+      blockNumbers.forEach((blockNumber) => expect(blockNumber).toBe(initialBlockNumbers[0] + 100))
       await new Promise<void>((resolve) => {
         utils.reset().then(async () => {
           const blockNumbers = await Promise.all(utils.providers.map((provider) => provider.getBlockNumber()))
           expect(blockNumbers).toEqual(initialBlockNumbers)
           resolve()
         })
+      })
+    })
+
+    it('resets the provider chainId', async () => {
+      const networks = await Promise.all(utils.providers.map((provider) => provider.getNetwork()))
+      networks.forEach((network) => expect(network.chainId).toBe(CHAIN_ID))
+      await new Promise<void>((resolve) => {
+        utils.reset(SupportedChainId.POLYGON).then(async () => {
+          const networks = await Promise.all(utils.providers.map((provider) => provider.getNetwork()))
+          networks.forEach((network) => expect(network.chainId).toBe(CHAIN_ID))
+        })
+        resolve()
       })
     })
   })
@@ -59,7 +78,6 @@ describe('Utils', () => {
         accounts: expect.arrayContaining([
           expect.objectContaining({ address: expect.any(String), privateKey: expect.any(String) }),
         ]),
-        chainId: 1,
         url: 'http://127.0.0.1:8545',
       })
     })

@@ -14,9 +14,6 @@ import { ImpersonatedSigner } from './signer'
 import { AddressLike, OneOrMany } from './types'
 import { WHALES } from './whales'
 
-const CHAIN_ID = 1
-const ETH = Ether.onChain(CHAIN_ID)
-
 export class Utils {
   /** Signing providers configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
   readonly providers: JsonRpcProvider[]
@@ -26,7 +23,7 @@ export class Utils {
 
   constructor(public network: Network) {
     this.providers = this.network.accounts.map((account) => {
-      const provider = new HardhatProvider(this.network.url, { chainId: 1, name: 'mainnet' })
+      const provider = new HardhatProvider(this.network.url)
       const wallet = new Wallet(account, provider)
       return new Proxy(provider, {
         get(target, prop) {
@@ -44,12 +41,12 @@ export class Utils {
     this.approval = new ApprovalUtils(this.provider)
   }
 
-  reset() {
+  reset(chainId?: number) {
     return (
       cy
-        .task('hardhat:reset')
-        // Providers will not "rewind" to an older block number, so they must be reset.
-        .then(() => Promise.all(this.providers.map((provider) => (provider as HardhatProvider).reset())))
+        .task('hardhat:reset', chainId)
+        // Providers will not "rewind" to an older block number nor notice chain changes, so they must be reset.
+        .then(() => this.providers.map((provider) => (provider as HardhatProvider).reset()))
     )
   }
 
@@ -127,7 +124,7 @@ export class Utils {
               /sender doesn't have enough funds to send tx. The max upfront cost is: (\d*)/
             )
             if (match) {
-              const funds = CurrencyAmount.fromRawAmount(ETH, match[1])
+              const funds = CurrencyAmount.fromRawAmount(Ether.onChain(this.provider.network.chainId), match[1])
               this.fund(whale, funds)
               try {
                 await token.transfer(address, balance)

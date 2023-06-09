@@ -3,7 +3,9 @@
  * This is expected, and necessary in order collect coverage.
  */
 
+import { hexlify } from '@ethersproject/bytes'
 import { Eip1193Bridge } from '@ethersproject/experimental/lib/eip1193-bridge'
+import { SupportedChainId } from '@uniswap/sdk-core'
 
 import setup from '../plugin/setup'
 import { Eip1193 } from './eip1193'
@@ -87,6 +89,13 @@ describe('Eip1193', () => {
         },
       ])
       expect(tx).toMatch(/^0x[0-9a-f]{64}$/)
+    })
+
+    it('wallet_switchEthereumChain', async () => {
+      await expect(
+        provider.send('wallet_switchEthereumChain', [{ chainId: hexlify(SupportedChainId.POLYGON) }])
+      ).resolves.toBeUndefined()
+      await expect(provider.send('eth_chainId')).resolves.toEqual('0x89')
     })
   })
 })

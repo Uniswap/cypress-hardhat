@@ -11,10 +11,12 @@ export async function setupHardhatEvents(on: Cypress.PluginEvents, config: Cypre
   on('task', {
     hardhat: (): Network => ({
       url: env.url,
-      chainId: env.chainId,
       accounts: env.accounts,
     }),
-    ['hardhat:reset']: () => env.reset(),
+    ['hardhat:reset']: async (chainId?: number) => {
+      await env.reset(chainId)
+      return null // A task must not return a value or null to indicate that it was handled.
+    },
   })
   on('before:spec', () => env.reset())
   on('after:run', () => env.close())

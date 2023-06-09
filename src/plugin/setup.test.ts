@@ -3,6 +3,8 @@
  * This is expected, and necessary in order collect coverage.
  */
 
+import { hexlify } from '@ethersproject/bytes'
+import { SupportedChainId } from '@uniswap/sdk-core'
 import { resetHardhatContext } from 'hardhat/plugins-testing'
 import { HardhatNetworkHDAccountsConfig, HardhatRuntimeEnvironment } from 'hardhat/types'
 
@@ -34,7 +36,6 @@ describe('setup', () => {
       env = await setup()
       expect(env).toMatchObject({
         url: 'http://127.0.0.1:8545',
-        chainId: 1,
         accounts: [
           {
             address: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
@@ -46,6 +47,7 @@ describe('setup', () => {
           },
         ],
       })
+      await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x1')
     })
 
     it('resets the environment', async () => {
@@ -65,8 +67,79 @@ describe('setup', () => {
           }),
         },
       ])
+      await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x1')
       await expect(hre.network.provider.send('eth_blockNumber', [])).resolves.toBe(blockNumber)
       await expect(hre.network.provider.send('hardhat_getAutomine', [])).resolves.toBe(true)
+    })
+
+    it('resets the environment with another chainId', async () => {
+      env = await setup()
+
+      await expect(env.reset(SupportedChainId.OPTIMISM)).rejects.toThrow('No fork configured for chainId(0x0a)')
+
+      await env.reset(SupportedChainId.POLYGON)
+      await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x89')
+
+      await env.reset(SupportedChainId.MAINNET)
+      await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x1')
+    })
+
+    describe('provider', () => {
+      it('delegates calls', async () => {
+        env = await setup()
+        const request = await fetch(env.url, {
+          method: 'POST',
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'eth_chainId',
+            params: [],
+            id: 1,
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        await expect(request.json()).resolves.toEqual(expect.objectContaining({ result: '0x1' }))
+      })
+
+      describe('EIP-3326', () => {
+        it('polyfills wallet_switchEthereumChain', async () => {
+          env = await setup()
+
+          const optimismRequest = await fetch(env.url, {
+            method: 'POST',
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: hexlify(SupportedChainId.OPTIMISM) }],
+              id: 1,
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+          await expect(optimismRequest.json()).resolves.toEqual(
+            expect.objectContaining({
+              error: expect.objectContaining({ message: 'Error: No fork configured for chainId(0x0a)' }),
+            })
+          )
+
+          const polygonRequest = await fetch(env.url, {
+            method: 'POST',
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: hexlify(SupportedChainId.POLYGON) }],
+              id: 1,
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+          await expect(polygonRequest.json()).resolves.toEqual(expect.objectContaining({ result: null }))
+          await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x89')
+        })
+      })
     })
 
     describe('accounts', () => {
@@ -90,19 +163,6 @@ describe('setup', () => {
         expect(warn).toHaveBeenCalledWith(
           'Specifying multiple hardhat accounts will noticeably slow your test startup time.\n\n'
         )
-      })
-    })
-
-    describe('logging', () => {
-      it('does not enable logging', async () => {
-        env = await setup()
-        expect(send).not.toHaveBeenCalled()
-      })
-
-      it('enables logging with `loggingEnabled`', async () => {
-        hre.config.networks.hardhat.loggingEnabled = true
-        env = await setup()
-        expect(send).toHaveBeenCalledWith('hardhat_setLoggingEnabled', [true])
       })
     })
   })

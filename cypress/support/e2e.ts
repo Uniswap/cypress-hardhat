@@ -28,7 +28,7 @@ Cypress.Commands.overwrite(
         url,
         onBeforeLoad(win) {
           options.onBeforeLoad?.(win)
-          window.ethereum = provider
+          win.ethereum = provider
         },
       })
     )

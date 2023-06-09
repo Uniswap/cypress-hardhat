@@ -1,6 +1,7 @@
 import { Eip1193Bridge } from '@ethersproject/experimental/lib/eip1193-bridge'
 import { JsonRpcProvider } from '@ethersproject/providers'
 
+import { HardhatProvider } from './provider'
 import { Utils } from './utils'
 
 export class Eip1193 extends Eip1193Bridge {
@@ -23,8 +24,8 @@ export class Eip1193 extends Eip1193Bridge {
       if (error) throw error
       return result?.result
     }
-    let method
-    let params
+    let method: string
+    let params: any[]
     if (isCallbackForm) {
       callback = args[1]
       method = args[0].method
@@ -41,9 +42,6 @@ export class Eip1193 extends Eip1193Bridge {
         case 'eth_accounts':
           result = [this.utils.wallet.address]
           break
-        case 'eth_chainId':
-          result = `0x${this.utils.network.chainId.toString(16)}`
-          break
         case 'eth_sendTransaction': {
           // Eip1193Bridge doesn't support .gas and .from directly, so we massage it to satisfy ethers' expectations.
           // See https://github.com/ethers-io/ethers.js/issues/1683.
@@ -58,6 +56,11 @@ export class Eip1193 extends Eip1193Bridge {
           result = (await this.signer.sendTransaction(req)).hash
           break
         }
+        case 'wallet_switchEthereumChain':
+          await super.send(method, params)
+          // Providers will not "rewind" to an older block number nor notice chain changes, so they must be reset.
+          this.utils.providers.forEach((provider) => (provider as HardhatProvider).reset())
+          break
         default:
           result = await super.send(method, params)
       }
