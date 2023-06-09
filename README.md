@@ -23,7 +23,7 @@ You'll need to [configure mainnet forking](https://hardhat.org/hardhat-network/g
 
 NOTE: You should set the [`accounts` field](https://hardhat.org/hardhat-network/reference#accounts) to include as few accounts as possible to reduce startup time for your tests' hardhat network.
 
-`cypress-hardhat` is also able to respond to `wallet_switchEthereumChain` requests to help test EIP-3326, if configured. To configure this behavior, add a `forks` field to your `hardhat.config.js` with the chains you are going to switch to:
+`cypress-hardhat` may be configured to respond to `wallet_switchEthereumChain` requests to help test EIP-3326 interactions. To configure this behavior, add a `forks` field to your `hardhat.config.js` with the chains you are going to switch to:
 
 ```
 const forks = {
