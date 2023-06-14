@@ -2,7 +2,7 @@ import { Network } from '@ethersproject/networks'
 import { JsonRpcProvider } from '@ethersproject/providers'
 
 export class HardhatProvider extends JsonRpcProvider {
-  cachedNetwork: Network | null = null
+  cachedNetwork: Promise<Network> | null = null
 
   constructor(url: string) {
     super(url, /* allow the network to change */ 'any')
@@ -20,8 +20,8 @@ export class HardhatProvider extends JsonRpcProvider {
     this._maxInternalBlockNumber = -1024
     this._internalBlockNumber = null as unknown as typeof this._internalBlockNumber
 
-    // Resets the network cache.
-    this.cachedNetwork = null
+    this._eventLoopCache = {} // allows re-polling for blockNumber (via this._cache)
+    this.cachedNetwork = null // allows re-polling for network (via this.detectNetwork)
   }
 
   /**
@@ -29,10 +29,9 @@ export class HardhatProvider extends JsonRpcProvider {
    * This avoids excessive calls to eth_chainId (similar to StaticJsonRpcProvider), while still allowing the chain to
    * change. */
   async detectNetwork(): Promise<Network> {
-    let network = this.cachedNetwork
-    if (network === null) {
-      network = await super.detectNetwork()
+    if (this.cachedNetwork === null) {
+      this.cachedNetwork = super.detectNetwork()
     }
-    return network
+    return this.cachedNetwork
   }
 }
