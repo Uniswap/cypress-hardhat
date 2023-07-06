@@ -68,7 +68,7 @@ import { CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
 import { HardhatUtils, Network } from 'cypress-hardhat/lib/browser'
 
 declare global {
-  namespace Cyrpess {
+  namespace Cypress {
     interface Chainable<Subject> {
       task(event: 'hardhat'): Chainable<Network>
     }
