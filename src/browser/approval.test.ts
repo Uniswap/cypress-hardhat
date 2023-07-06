@@ -35,6 +35,12 @@ beforeAll(() => {
 })
 
 describe('Approval', () => {
+  describe('getUniversalRouterAddress', () => {
+    it('returns the Universal Router address', async () => {
+      const address = await approval.getUniversalRouterAddress()
+      expect(address).toMatch(/^0x[a-fA-F0-9]{40}$/)
+    })
+  })
   describe('setTokenAllowance', () => {
     it('approves USDT', async () => {
       const originalAllowance = await approval.getTokenAllowance({ owner, token, spender })

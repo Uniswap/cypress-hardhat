@@ -30,8 +30,9 @@ export class ApprovalUtils {
   constructor(readonly provider: JsonRpcProvider) {}
 
   /** Returns the address of the Universal Router for the current chain */
-  get universalRouterAddress() {
-    return UNIVERSAL_ROUTER_ADDRESS(this.provider.network.chainId)
+  async getUniversalRouterAddress() {
+    const network = await this.provider.getNetwork()
+    return UNIVERSAL_ROUTER_ADDRESS(network.chainId)
   }
 
   /** Returns the amount the spender is allowed by the owner to spend for the token. */
@@ -82,9 +83,13 @@ export class ApprovalUtils {
   async getPermit2Allowance({
     owner,
     token,
-    spender = this.universalRouterAddress,
+    spender,
   }: Permit2ApprovalAddresses): Promise<{ amount: BigNumber; expiration: number }> {
-    const addresses = normalizeApprovalAddresses({ owner, token, spender })
+    const addresses = normalizeApprovalAddresses({
+      owner,
+      token,
+      spender: spender ?? (await this.getUniversalRouterAddress()),
+    })
 
     const permit2 = Permit2__factory.connect(PERMIT2_ADDRESS, this.provider)
     return permit2.allowance(addresses.owner, addresses.token, addresses.spender)
@@ -97,10 +102,14 @@ export class ApprovalUtils {
    * @param allowance - object containing the `amount` (defaults to a max permit approval of MaxUint160) and `expiration` (defaults to 30 days from the current time)
    * */
   async setPermit2Allowance(
-    { owner, token, spender = this.universalRouterAddress }: Permit2ApprovalAddresses,
+    { owner, token, spender }: Permit2ApprovalAddresses,
     { amount = MaxUint160, expiration = get30DayExpiration() } = {} as { amount?: BigNumberish; expiration?: number }
   ): Promise<void> {
-    const addresses = normalizeApprovalAddresses({ owner, token, spender })
+    const addresses = normalizeApprovalAddresses({
+      owner,
+      token,
+      spender: spender ?? (await this.getUniversalRouterAddress()),
+    })
 
     const permit2 = AllowanceTransfer__factory.connect(
       PERMIT2_ADDRESS,
