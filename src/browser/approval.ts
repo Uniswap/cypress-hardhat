@@ -85,8 +85,11 @@ export class ApprovalUtils {
     token,
     spender,
   }: Permit2ApprovalAddresses): Promise<{ amount: BigNumber; expiration: number }> {
-    const universalRouterAddress = await this.getUniversalRouterAddress()
-    const addresses = normalizeApprovalAddresses({ owner, token, spender: spender ?? universalRouterAddress })
+    const addresses = normalizeApprovalAddresses({
+      owner,
+      token,
+      spender: spender ?? (await this.getUniversalRouterAddress()),
+    })
 
     const permit2 = Permit2__factory.connect(PERMIT2_ADDRESS, this.provider)
     return permit2.allowance(addresses.owner, addresses.token, addresses.spender)
@@ -102,8 +105,11 @@ export class ApprovalUtils {
     { owner, token, spender }: Permit2ApprovalAddresses,
     { amount = MaxUint160, expiration = get30DayExpiration() } = {} as { amount?: BigNumberish; expiration?: number }
   ): Promise<void> {
-    const universalRouterAddress = await this.getUniversalRouterAddress()
-    const addresses = normalizeApprovalAddresses({ owner, token, spender: spender ?? universalRouterAddress })
+    const addresses = normalizeApprovalAddresses({
+      owner,
+      token,
+      spender: spender ?? (await this.getUniversalRouterAddress()),
+    })
 
     const permit2 = AllowanceTransfer__factory.connect(
       PERMIT2_ADDRESS,
