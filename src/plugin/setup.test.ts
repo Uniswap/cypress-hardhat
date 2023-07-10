@@ -4,7 +4,7 @@
  */
 
 import { hexlify } from '@ethersproject/bytes'
-import { SupportedChainId } from '@uniswap/sdk-core'
+import { ChainId } from '@uniswap/sdk-core'
 import { resetHardhatContext } from 'hardhat/plugins-testing'
 import { HardhatNetworkHDAccountsConfig, HardhatRuntimeEnvironment } from 'hardhat/types'
 
@@ -75,12 +75,12 @@ describe('setup', () => {
     it('resets the environment with another chainId', async () => {
       env = await setup()
 
-      await expect(env.reset(SupportedChainId.OPTIMISM)).rejects.toThrow('No fork configured for chainId(0x0a)')
+      await expect(env.reset(ChainId.OPTIMISM)).rejects.toThrow('No fork configured for chainId(0x0a)')
 
-      await env.reset(SupportedChainId.POLYGON)
+      await env.reset(ChainId.POLYGON)
       await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x89')
 
-      await env.reset(SupportedChainId.MAINNET)
+      await env.reset(ChainId.MAINNET)
       await expect(hre.network.provider.send('eth_chainId', [])).resolves.toBe('0x1')
     })
 
@@ -111,7 +111,7 @@ describe('setup', () => {
             body: JSON.stringify({
               jsonrpc: '2.0',
               method: 'wallet_switchEthereumChain',
-              params: [{ chainId: hexlify(SupportedChainId.OPTIMISM) }],
+              params: [{ chainId: hexlify(ChainId.OPTIMISM) }],
               id: 1,
             }),
             headers: {
@@ -129,7 +129,7 @@ describe('setup', () => {
             body: JSON.stringify({
               jsonrpc: '2.0',
               method: 'wallet_switchEthereumChain',
-              params: [{ chainId: hexlify(SupportedChainId.POLYGON) }],
+              params: [{ chainId: hexlify(ChainId.POLYGON) }],
               id: 1,
             }),
             headers: {

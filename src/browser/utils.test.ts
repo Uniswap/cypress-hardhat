@@ -4,7 +4,7 @@
  */
 
 import { Wallet } from '@ethersproject/wallet'
-import { CurrencyAmount, Ether, SupportedChainId, Token } from '@uniswap/sdk-core'
+import { ChainId, CurrencyAmount, Ether, Token } from '@uniswap/sdk-core'
 
 import setup from '../plugin/setup'
 import { Network } from '../types/Network'
@@ -41,8 +41,8 @@ describe('Utils', () => {
     })
 
     it('invokes hardhat:reset with passed chainId', () => {
-      utils.reset(SupportedChainId.POLYGON)
-      expect(cy.task).toHaveBeenCalledWith('hardhat:reset', SupportedChainId.POLYGON)
+      utils.reset(ChainId.POLYGON)
+      expect(cy.task).toHaveBeenCalledWith('hardhat:reset', ChainId.POLYGON)
     })
 
     it('resets the provider blockNumber', async () => {
@@ -63,7 +63,7 @@ describe('Utils', () => {
       const networks = await Promise.all(utils.providers.map((provider) => provider.getNetwork()))
       networks.forEach((network) => expect(network.chainId).toBe(CHAIN_ID))
       await new Promise<void>((resolve) => {
-        utils.reset(SupportedChainId.POLYGON).then(async () => {
+        utils.reset(ChainId.POLYGON).then(async () => {
           const networks = await Promise.all(utils.providers.map((provider) => provider.getNetwork()))
           networks.forEach((network) => expect(network.chainId).toBe(CHAIN_ID))
         })
