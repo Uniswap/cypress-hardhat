@@ -60,6 +60,7 @@
   "dependencies": {
     "@uniswap/permit2-sdk": "^1.2.0",
     "@uniswap/sdk-core": ">= 3",
-    "@uniswap/universal-router-sdk": "^1.5.4"
+    "@uniswap/universal-router-sdk": "^1.5.4",
+    "@uniswap/v3-sdk": "^3.10.0"
   }
 }

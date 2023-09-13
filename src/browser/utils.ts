@@ -13,6 +13,7 @@ import { HardhatProvider } from './provider'
 import { ImpersonatedSigner } from './signer'
 import { AddressLike, OneOrMany } from './types'
 import { WHALES } from './whales'
+import { PoolUtils } from './pool'
 
 export class Utils {
   /** Signing providers configured via hardhat's {@link https://hardhat.org/hardhat-network/reference/#accounts}. */
@@ -20,6 +21,9 @@ export class Utils {
 
   /** Utilities for getting/setting ERC-20 and Permit2 approvals. */
   readonly approval: ApprovalUtils
+
+  /** Utilities for getting/setting PoolPositions. */
+  readonly pool: PoolUtils
 
   constructor(public network: Network) {
     this.providers = this.network.accounts.map((account) => {
@@ -39,6 +43,7 @@ export class Utils {
       })
     })
     this.approval = new ApprovalUtils(this.provider)
+    this.pool = new PoolUtils(this.provider)
   }
 
   reset(chainId?: number) {
