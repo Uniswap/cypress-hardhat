@@ -6,7 +6,6 @@ require('dotenv').config()
 const forks = {
   [ChainId.MAINNET]: {
     url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-    blockNumber: 17023328,
     httpHeaders: { Origin: 'localhost:3000' },
   },
   [ChainId.POLYGON]: {
