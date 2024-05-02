@@ -20,8 +20,8 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          NPM_TOKEN: op://npm-deploy/npm-token/secret
-          GITHUB_TOKEN: op://npm-deploy/GITHUB_TOKEN/token 
+          NPM_TOKEN: op://npm-public-deploy/public-test-npm-deploy/credential
+          GITHUB_TOKEN: op://npm-public-deploy/GITHUB_TOKEN/token 
       - uses: actions/checkout@v3
 
       - uses: actions/setup-node@v3
