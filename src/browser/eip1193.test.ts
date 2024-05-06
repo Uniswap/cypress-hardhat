@@ -92,10 +92,15 @@ describe('Eip1193', () => {
     })
 
     it('wallet_switchEthereumChain', async () => {
+      let chainChangedEvent = false
+      provider.on('chainChanged', (event) => {
+        chainChangedEvent = event
+      })
       await expect(
         provider.send('wallet_switchEthereumChain', [{ chainId: hexlify(ChainId.POLYGON) }])
       ).resolves.toBeUndefined()
-      await expect(provider.send('eth_chainId')).resolves.toEqual('0x89')
+      expect(chainChangedEvent).toBe(hexlify(ChainId.POLYGON))
+      await expect(provider.send('eth_chainId')).resolves.toEqual(hexlify(ChainId.POLYGON))
     })
   })
 })

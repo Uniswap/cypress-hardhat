@@ -60,6 +60,7 @@ export class Eip1193 extends Eip1193Bridge {
           await super.send(method, params)
           // Providers will not "rewind" to an older block number nor notice chain changes, so they must be reset.
           this.utils.providers.forEach((provider) => (provider as HardhatProvider).reset())
+          this.emit('chainChanged', params[0].chainId)
           break
         default:
           result = await super.send(method, params)
