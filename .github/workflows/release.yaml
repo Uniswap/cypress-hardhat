@@ -21,7 +21,6 @@ jobs:
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           NPM_TOKEN: op://npm-public-deploy/public-test-npm-deploy/credential
-          GITHUB_TOKEN: op://npm-public-deploy/GITHUB_TOKEN/token 
       - uses: actions/checkout@v3
 
       - uses: actions/setup-node@v3
@@ -36,5 +35,4 @@ jobs:
         if: success()
         env:
           NPM_CONFIG_USERCONFIG: /dev/null
-          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ env.NPM_TOKEN }}
