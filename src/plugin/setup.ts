@@ -121,7 +121,7 @@ export default async function setup(): Promise<
   const forwardingServer = http.createServer((req, res) => {
     // Forward responses to the active server.
     req.pipe(
-      http.request({ ...req, hostname: server.address, port: server.port }, (response) => {
+      http.request({ ...req, hostname: server.address, port: server.port, joinDuplicateHeaders: true }, (response) => {
         for (const header in response.headers) {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           res.setHeader(header, response.headers[header]!)
